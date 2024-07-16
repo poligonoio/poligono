@@ -1,0 +1,30 @@
+version: "3.9"
+services:
+  poligono-core:
+    build:
+      dockerfile: Dockerfile
+      context: .
+      target: build-release-stage
+    ports:
+    - "8888:8888"
+    restart: unless-stopped
+    depends_on:
+      - mongo
+      - trino
+    env_file:
+      - .env
+
+  mongo:
+    image: mongo
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: poligono
+      MONGO_INITDB_ROOT_PASSWORD: poligono
+
+  trino:
+    image: trinodb/trino
+    restart: always
+    environment:
+      CATALOG_MANAGEMENT: dynamic
+    ports:
+    - "8080:8080"

@@ -1,0 +1,13 @@
+.circleci
+.cpcache
+.devcontainer
+.husky
+.lsp
+.github
+.vscode
+charts
+
+*.db
+
+Dockerfile
+.dockerignore

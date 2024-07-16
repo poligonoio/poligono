@@ -1,0 +1,277 @@
+definitions:
+  models.Activity:
+    properties:
+      data:
+        items:
+          additionalProperties: true
+          type: object
+        type: array
+      data_source_name:
+        type: string
+      organization_id:
+        type: string
+      prompt:
+        type: string
+      query:
+        type: string
+    type: object
+  models.DataSource:
+    properties:
+      name:
+        type: string
+      secret:
+        type: string
+      type:
+        allOf:
+        - $ref: '#/definitions/models.DataSourceType'
+        enum:
+        - PostgreSQL
+    required:
+    - name
+    - secret
+    - type
+    type: object
+  models.DataSourceType:
+    enum:
+    - PostgreSQL
+    type: string
+    x-enum-varnames:
+    - PostgreSQL
+  models.HTTPError:
+    properties:
+      description:
+        type: string
+      error:
+        type: string
+    type: object
+  models.HTTPSuccess:
+    properties:
+      message:
+        type: string
+    type: object
+  models.Prompt:
+    properties:
+      data_source_name:
+        type: string
+      prompt:
+        type: string
+    type: object
+  models.UpdateRequestDataSourceBody:
+    properties:
+      name:
+        type: string
+      secret:
+        type: string
+      type:
+        allOf:
+        - $ref: '#/definitions/models.DataSourceType'
+        enum:
+        - PostgreSQL
+    type: object
+externalDocs:
+  description: OpenAPI
+  url: https://swagger.io/resources/open-api/
+info:
+  contact:
+    email: dev@poligono.xyz
+    name: Poligono Support
+    url: https://www.swagger.io/support
+  description: Democratizing data access through plain English.
+  license:
+    name: GNU Affero General Public License version 3
+    url: https://www.gnu.org/licenses/agpl-3.0.html
+  termsOfService: https://swagger.io/terms/
+  title: Poligono API
+paths:
+  /datasources:
+    post:
+      consumes:
+      - application/json
+      description: Create a new data source configuration
+      parameters:
+      - description: Data Source
+        in: body
+        name: Data_Source
+        required: true
+        schema:
+          $ref: '#/definitions/models.DataSource'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.HTTPSuccess'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.HTTPError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.HTTPError'
+      summary: Add Data Source
+      tags:
+      - data_source
+  /datasources/{name}:
+    delete:
+      consumes:
+      - application/json
+      description: Permanently deletes the specified data source
+      parameters:
+      - description: Data Source Name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.HTTPSuccess'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.HTTPError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.HTTPError'
+      summary: Remove Data Source
+      tags:
+      - data_source
+    get:
+      consumes:
+      - application/json
+      description: Retrieve data source configuration with the specified name
+      parameters:
+      - description: Data Source Name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.DataSource'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.HTTPError'
+      summary: Retrieve Data Source by Name
+      tags:
+      - data_source
+    put:
+      consumes:
+      - application/json
+      description: Update the configuration of the specified data source
+      parameters:
+      - description: Data Source Name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Data Source
+        in: body
+        name: Data_Source
+        required: true
+        schema:
+          $ref: '#/definitions/models.UpdateRequestDataSourceBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.HTTPSuccess'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.HTTPError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.HTTPError'
+      summary: Modify Data Source
+      tags:
+      - data_source
+  /datasources/all:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all data sources associated with the specified organization
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.DataSource'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.HTTPError'
+      summary: List Data Sources
+      tags:
+      - data_source
+  /prompt:
+    post:
+      consumes:
+      - application/json
+      description: Create an SQL query based on a natural language prompt
+      parameters:
+      - description: Prompt Object
+        in: body
+        name: Prompt
+        required: true
+        schema:
+          $ref: '#/definitions/models.Prompt'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Activity'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.HTTPError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.HTTPError'
+      summary: Generate SQL Query
+      tags:
+      - query
+securityDefinitions:
+  BasicAuth:
+    type: basic
+swagger: "2.0"
