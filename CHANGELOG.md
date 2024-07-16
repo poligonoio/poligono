@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/poligonoio/poligono/compare/v0.1.0...v0.1.1) (2024-07-16)
+
+
+### Bug Fixes
+
+* hello data ([c42640e](https://github.com/poligonoio/poligono/commit/c42640e0ded70ddc7c0d6136df41c24b7197d91a))
+
 ## [0.2.13](https://github.com/poligonoio/vega-core/compare/v0.2.12...v0.2.13) (2024-07-11)
 
 
