@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/poligonoio/poligono/compare/v0.1.1...v0.1.2) (2024-07-17)
+
+
+### Bug Fixes
+
+* delete charts files ([c36e76e](https://github.com/poligonoio/poligono/commit/c36e76e09e6e0629108a5f6f7b858fb51a15ad14))
+
 ## [0.1.1](https://github.com/poligonoio/poligono/compare/v0.1.0...v0.1.1) (2024-07-16)
 
 
