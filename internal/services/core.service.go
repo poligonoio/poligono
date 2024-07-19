@@ -5,5 +5,5 @@ import (
 )
 
 type CoreService interface {
-	GeminiPrompt(prompt string) (models.GeminiQueryResult, error)
+	PromptGemini(prompt string) (models.QueryResult, error)
 }

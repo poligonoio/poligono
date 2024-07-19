@@ -257,7 +257,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/prompt": {
+        "/prompts/generate": {
             "post": {
                 "description": "Create an SQL query based on a natural language prompt",
                 "consumes": [
@@ -277,7 +277,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.Prompt"
+                            "$ref": "#/definitions/models.GenerateQueryBody"
                         }
                     }
                 ],
@@ -285,7 +285,59 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.Activity"
+                            "$ref": "#/definitions/models.GenerateQueryActivity"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.HTTPError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.HTTPError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.HTTPError"
+                        }
+                    }
+                }
+            }
+        },
+        "/prompts/improve": {
+            "post": {
+                "description": "Improve an SQL query based on a natural language prompt",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "query"
+                ],
+                "summary": "Improve SQL Query",
+                "parameters": [
+                    {
+                        "description": "Prompt Object",
+                        "name": "Prompt",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.ImproveQueryBody"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.ImproveQueryActivity"
                         }
                     },
                     "400": {
@@ -311,30 +363,6 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "models.Activity": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "type": "object",
-                        "additionalProperties": true
-                    }
-                },
-                "data_source_name": {
-                    "type": "string"
-                },
-                "organization_id": {
-                    "type": "string"
-                },
-                "prompt": {
-                    "type": "string"
-                },
-                "query": {
-                    "type": "string"
-                }
-            }
-        },
         "models.DataSource": {
             "type": "object",
             "required": [
@@ -370,6 +398,44 @@ const docTemplate = `{
                 "PostgreSQL"
             ]
         },
+        "models.GenerateQueryActivity": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": true
+                    }
+                },
+                "data_source_name": {
+                    "type": "string"
+                },
+                "organization_id": {
+                    "type": "string"
+                },
+                "prompt": {
+                    "type": "string"
+                },
+                "query": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.GenerateQueryBody": {
+            "type": "object",
+            "properties": {
+                "data_source_name": {
+                    "type": "string"
+                },
+                "execute": {
+                    "type": "boolean"
+                },
+                "prompt": {
+                    "type": "string"
+                }
+            }
+        },
         "models.HTTPError": {
             "type": "object",
             "properties": {
@@ -389,13 +455,40 @@ const docTemplate = `{
                 }
             }
         },
-        "models.Prompt": {
+        "models.ImproveQueryActivity": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": true
+                    }
+                },
+                "data_source_name": {
+                    "type": "string"
+                },
+                "improved_query": {
+                    "type": "string"
+                },
+                "organization_id": {
+                    "type": "string"
+                },
+                "original_query": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.ImproveQueryBody": {
             "type": "object",
             "properties": {
                 "data_source_name": {
                     "type": "string"
                 },
-                "prompt": {
+                "execute": {
+                    "type": "boolean"
+                },
+                "query": {
                     "type": "string"
                 }
             }

@@ -23,7 +23,7 @@ func NewSchemaService(ctx context.Context, schemaCollection *mongo.Collection) S
 }
 
 func (self *SchemaServiceImpl) Create(schema models.Schema) error {
-	query := bson.D{bson.E{Key: "name", Value: schema.Name}, bson.E{Key: "organization_id", Value: schema.OrganizationId}}
+	query := bson.D{bson.E{Key: "name", Value: schema.Name}, bson.E{Key: "organization_id", Value: schema.OrganizationId}, bson.E{Key: "data_source_name", Value: schema.DataSourceName}}
 	count, err := self.schemaCollection.CountDocuments(self.ctx, query)
 	if err != nil {
 		return err

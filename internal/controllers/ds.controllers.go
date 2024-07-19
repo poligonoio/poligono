@@ -56,7 +56,7 @@ func (self *DataSourceController) GetDataSourceByName(c *gin.Context) {
 		})
 	}
 
-	_sub, _ := c.Get("owner_id")
+	_sub, _ := c.Get("sub")
 	sub, ok := _sub.(string)
 	if !ok {
 		c.JSON(http.StatusInternalServerError, models.HTTPError{
@@ -111,7 +111,7 @@ func (self *DataSourceController) GetAllDataSource(c *gin.Context) {
 		})
 	}
 
-	_sub, _ := c.Get("owner_id")
+	_sub, _ := c.Get("sub")
 	sub, ok := _sub.(string)
 	if !ok {
 		c.JSON(http.StatusInternalServerError, models.HTTPError{
@@ -160,7 +160,7 @@ func (self *DataSourceController) CreateDataSource(c *gin.Context) {
 		})
 	}
 
-	_sub, _ := c.Get("owner_id")
+	_sub, _ := c.Get("sub")
 	sub, ok := _sub.(string)
 	if !ok {
 		c.JSON(http.StatusInternalServerError, models.HTTPError{
@@ -235,7 +235,7 @@ func (self *DataSourceController) UpdateDataSourceByName(c *gin.Context) {
 		})
 	}
 
-	_sub, _ := c.Get("owner_id")
+	_sub, _ := c.Get("sub")
 	sub, ok := _sub.(string)
 	if !ok {
 		c.JSON(http.StatusInternalServerError, models.HTTPError{
@@ -295,7 +295,7 @@ func (self *DataSourceController) DeleteDataSourceByName(c *gin.Context) {
 		})
 	}
 
-	_sub, _ := c.Get("owner_id")
+	_sub, _ := c.Get("sub")
 	sub, ok := _sub.(string)
 	if !ok {
 		c.JSON(http.StatusInternalServerError, models.HTTPError{
