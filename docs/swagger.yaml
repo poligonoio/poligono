@@ -1,20 +1,4 @@
 definitions:
-  models.Activity:
-    properties:
-      data:
-        items:
-          additionalProperties: true
-          type: object
-        type: array
-      data_source_name:
-        type: string
-      organization_id:
-        type: string
-      prompt:
-        type: string
-      query:
-        type: string
-    type: object
   models.DataSource:
     properties:
       name:
@@ -37,6 +21,31 @@ definitions:
     type: string
     x-enum-varnames:
     - PostgreSQL
+  models.GenerateQueryActivity:
+    properties:
+      data:
+        items:
+          additionalProperties: true
+          type: object
+        type: array
+      data_source_name:
+        type: string
+      organization_id:
+        type: string
+      prompt:
+        type: string
+      query:
+        type: string
+    type: object
+  models.GenerateQueryBody:
+    properties:
+      data_source_name:
+        type: string
+      execute:
+        type: boolean
+      prompt:
+        type: string
+    type: object
   models.HTTPError:
     properties:
       description:
@@ -49,11 +58,29 @@ definitions:
       message:
         type: string
     type: object
-  models.Prompt:
+  models.ImproveQueryActivity:
+    properties:
+      data:
+        items:
+          additionalProperties: true
+          type: object
+        type: array
+      data_source_name:
+        type: string
+      improved_query:
+        type: string
+      organization_id:
+        type: string
+      original_query:
+        type: string
+    type: object
+  models.ImproveQueryBody:
     properties:
       data_source_name:
         type: string
-      prompt:
+      execute:
+        type: boolean
+      query:
         type: string
     type: object
   models.UpdateRequestDataSourceBody:
@@ -237,7 +264,7 @@ paths:
       summary: List Data Sources
       tags:
       - data_source
-  /prompt:
+  /prompts/generate:
     post:
       consumes:
       - application/json
@@ -248,14 +275,14 @@ paths:
         name: Prompt
         required: true
         schema:
-          $ref: '#/definitions/models.Prompt'
+          $ref: '#/definitions/models.GenerateQueryBody'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.Activity'
+            $ref: '#/definitions/models.GenerateQueryActivity'
         "400":
           description: Bad Request
           schema:
@@ -269,6 +296,40 @@ paths:
           schema:
             $ref: '#/definitions/models.HTTPError'
       summary: Generate SQL Query
+      tags:
+      - query
+  /prompts/improve:
+    post:
+      consumes:
+      - application/json
+      description: Improve an SQL query based on a natural language prompt
+      parameters:
+      - description: Prompt Object
+        in: body
+        name: Prompt
+        required: true
+        schema:
+          $ref: '#/definitions/models.ImproveQueryBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.ImproveQueryActivity'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.HTTPError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.HTTPError'
+      summary: Improve SQL Query
       tags:
       - query
 securityDefinitions:

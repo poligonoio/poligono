@@ -5,5 +5,5 @@ import (
 )
 
 type ActivityService interface {
-	CreateActivity(activity models.Activity) error
+	CreateActivity(activity models.GenerateQueryActivity) error
 }
