@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/poligonoio/poligono/compare/v0.1.2...v0.2.0) (2024-07-19)
+
+
+### Features
+
+* SQL query tuning for improved readability and performance ([b7fbcac](https://github.com/poligonoio/poligono/commit/b7fbcac1ff789d2255e08b561ec87344520d95a9))
+
 ## [0.1.2](https://github.com/poligonoio/poligono/compare/v0.1.1...v0.1.2) (2024-07-17)
 
 
