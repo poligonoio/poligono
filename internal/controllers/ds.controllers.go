@@ -16,12 +16,12 @@ import (
 
 type DataSourceController struct {
 	DataSourceService services.DataSourceService
-	TrinoService      services.TrinoService
+	TrinoService      services.EngineService
 	SchemaService     services.SchemaService
 	validate          *validatorv10.Validate
 }
 
-func NewDataSourceController(dataSourceService services.DataSourceService, trinoService services.TrinoService, schemaService services.SchemaService, validate *validatorv10.Validate) DataSourceController {
+func NewDataSourceController(dataSourceService services.DataSourceService, trinoService services.EngineService, schemaService services.SchemaService, validate *validatorv10.Validate) DataSourceController {
 	return DataSourceController{
 		DataSourceService: dataSourceService,
 		TrinoService:      trinoService,

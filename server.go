@@ -86,7 +86,7 @@ func init() {
 	logger.Info.Println("Infisical initialized successfully!")
 
 	logger.Info.Println("Initializing Trino service")
-	trinoService, err := services.NewTrinoService(ctx)
+	trinoEngineService, err := services.NewTrinoEngineService(ctx)
 	if err != nil {
 		logger.Error.Fatalf("Error connecting to trino: %v\n", err)
 	}
@@ -99,14 +99,14 @@ func init() {
 	// Initialize Data source service and controller
 	logger.Info.Println("Initializing Data source service and controller...")
 	dataSourceCollection := mongoClient.Database("poligono").Collection("datasources")
-	dataSourceService := services.NewDataSourceService(ctx, dataSourceCollection, infisicalService, trinoService, schemaService)
-	dataSourceController := controllers.NewDataSourceController(dataSourceService, trinoService, schemaService, validate)
+	dataSourceService := services.NewDataSourceService(ctx, dataSourceCollection, infisicalService, trinoEngineService, schemaService)
+	dataSourceController := controllers.NewDataSourceController(dataSourceService, trinoEngineService, schemaService, validate)
 	logger.Info.Println("Data source service and controller Initialized successfully!")
 
 	// Initialize core service and controller
 	logger.Info.Println("Initializing Core service and controller...")
 	coreService := services.NewCoreService(ctx, model)
-	coreController := controllers.NewCoreController(coreService, dataSourceService, trinoService)
+	coreController := controllers.NewCoreController(coreService, dataSourceService, trinoEngineService)
 	logger.Info.Println("Core service and controller initialized successfully!")
 
 	// Initialize Gin routes and and middlewares

@@ -11,5 +11,4 @@ type DataSourceService interface {
 	Update(name string, organizationId string, newDataSource models.UpdateRequestDataSourceBody) error
 	Delete(name string, organizationId string) error
 	GetDataSourceSchemas(dataSourceName string, organizationId string) ([]models.Schema, error)
-	Sync(dataSourceName string, organizationId string) error
 }
