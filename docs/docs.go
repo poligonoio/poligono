@@ -379,7 +379,8 @@ const docTemplate = `{
                 },
                 "type": {
                     "enum": [
-                        "PostgreSQL"
+                        "PostgreSQL",
+                        "MySQL"
                     ],
                     "allOf": [
                         {
@@ -392,10 +393,12 @@ const docTemplate = `{
         "models.DataSourceType": {
             "type": "string",
             "enum": [
-                "PostgreSQL"
+                "PostgreSQL",
+                "MySQL"
             ],
             "x-enum-varnames": [
-                "PostgreSQL"
+                "PostgreSQL",
+                "MySQL"
             ]
         },
         "models.GenerateQueryActivity": {
@@ -504,7 +507,8 @@ const docTemplate = `{
                 },
                 "type": {
                     "enum": [
-                        "PostgreSQL"
+                        "PostgreSQL",
+                        "MySQL"
                     ],
                     "allOf": [
                         {

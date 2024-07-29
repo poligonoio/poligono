@@ -10,6 +10,7 @@ definitions:
         - $ref: '#/definitions/models.DataSourceType'
         enum:
         - PostgreSQL
+        - MySQL
     required:
     - name
     - secret
@@ -18,9 +19,11 @@ definitions:
   models.DataSourceType:
     enum:
     - PostgreSQL
+    - MySQL
     type: string
     x-enum-varnames:
     - PostgreSQL
+    - MySQL
   models.GenerateQueryActivity:
     properties:
       data:
@@ -94,6 +97,7 @@ definitions:
         - $ref: '#/definitions/models.DataSourceType'
         enum:
         - PostgreSQL
+        - MySQL
     type: object
 externalDocs:
   description: OpenAPI

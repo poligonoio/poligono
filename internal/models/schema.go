@@ -4,8 +4,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-type PSQLSchema struct {
-	Nspname string `json:"nspname"`
+type SQLSchema struct {
+	Name string `json:"name"`
 }
 
 type Schemas struct {
@@ -28,9 +28,8 @@ type UpdateSchema struct {
 	Tables         []Table `json:"tables" bson:"tables"`
 }
 
-type PSQLTable struct {
-	Relname      string `json:"relname"`
-	Relnamespace int64  `json:"relnamespace"`
+type SQLTable struct {
+	Name string `json:"name"`
 }
 
 type Table struct {
@@ -39,9 +38,8 @@ type Table struct {
 	Fields      []Field `json:"fields" bson:"fields"`
 }
 
-type PSQLField struct {
-	Attname  string `json:"attname"`
-	Attrelid int    `json:"attrelid"`
+type SQLField struct {
+	Name string `json:"name"`
 }
 
 type Field struct {

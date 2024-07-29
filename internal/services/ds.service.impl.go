@@ -18,16 +18,16 @@ type DataSourceServiceImpl struct {
 	ctx                  context.Context
 	dataSourceCollection *mongo.Collection
 	infisicalService     InfisicalService
-	trinoService         TrinoService
+	engineService        EngineService
 	schemaService        SchemaService
 }
 
-func NewDataSourceService(ctx context.Context, dataSourceCollection *mongo.Collection, infisicalService InfisicalService, trinoService TrinoService, schemaService SchemaService) DataSourceService {
+func NewDataSourceService(ctx context.Context, dataSourceCollection *mongo.Collection, infisicalService InfisicalService, engineService EngineService, schemaService SchemaService) DataSourceService {
 	return &DataSourceServiceImpl{
 		ctx:                  ctx,
 		dataSourceCollection: dataSourceCollection,
 		infisicalService:     infisicalService,
-		trinoService:         trinoService,
+		engineService:        engineService,
 		schemaService:        schemaService,
 	}
 }
@@ -94,7 +94,7 @@ func (self *DataSourceServiceImpl) Create(dataSource models.DataSource) error {
 
 	// Create catalog
 	catalogName := fmt.Sprintf("%s_%s", dataSource.Name, dataSource.OrganizationId)
-	if err = self.trinoService.CreateCatalog(catalogName, dataSource.Type, dataSource.Secret); err != nil {
+	if err = self.CreateCatalog(catalogName, dataSource.Type, dataSource.Secret); err != nil {
 		cleanUpErr := self.Delete(dataSource.Name, dataSource.OrganizationId)
 		if cleanUpErr != nil {
 			logger.Error.Printf("Data source clean up failed: %v", cleanUpErr)
@@ -114,7 +114,7 @@ func (self *DataSourceServiceImpl) Create(dataSource models.DataSource) error {
 		return err
 	}
 
-	err = self.Sync(createdDataSource.Name, createdDataSource.OrganizationId)
+	err = self.Sync(createdDataSource.Name, createdDataSource.OrganizationId, createdDataSource.Type)
 	if err != nil {
 		cleanUpErr := self.Delete(dataSource.Name, dataSource.OrganizationId)
 		if cleanUpErr != nil {
@@ -177,12 +177,12 @@ func (self *DataSourceServiceImpl) Update(name string, organizationId string, ne
 			return err
 		}
 
-		if err = self.trinoService.RemoveCatalog(self.trinoService.GetCatalogName(name, organizationId)); err != nil {
+		if err = self.engineService.RemoveCatalog(self.engineService.GetCatalogName(name, organizationId)); err != nil {
 			return err
 		}
 
 		catalogName := fmt.Sprintf("%s_%s", newDataSource.Name, organizationId)
-		if err = self.trinoService.CreateCatalog(catalogName, updatedDataSource.Type, newDataSource.Secret); err != nil {
+		if err = self.CreateCatalog(catalogName, updatedDataSource.Type, newDataSource.Secret); err != nil {
 			return err
 		}
 
@@ -201,12 +201,12 @@ func (self *DataSourceServiceImpl) Update(name string, organizationId string, ne
 			return err
 		}
 
-		if err = self.trinoService.RemoveCatalog(self.trinoService.GetCatalogName(name, organizationId)); err != nil {
+		if err = self.engineService.RemoveCatalog(self.engineService.GetCatalogName(name, organizationId)); err != nil {
 			return err
 		}
 
-		catalogName := self.trinoService.GetCatalogName(name, organizationId)
-		if err = self.trinoService.CreateCatalog(catalogName, updatedDataSource.Type, newDataSource.Secret); err != nil {
+		catalogName := self.engineService.GetCatalogName(name, organizationId)
+		if err = self.CreateCatalog(catalogName, updatedDataSource.Type, newDataSource.Secret); err != nil {
 			return err
 		}
 	} else if newDataSource.Name != "" {
@@ -229,12 +229,12 @@ func (self *DataSourceServiceImpl) Update(name string, organizationId string, ne
 			return err
 		}
 
-		if err = self.trinoService.RemoveCatalog(self.trinoService.GetCatalogName(name, organizationId)); err != nil {
+		if err = self.engineService.RemoveCatalog(self.engineService.GetCatalogName(name, organizationId)); err != nil {
 			return err
 		}
 
-		catalogName := self.trinoService.GetCatalogName(newDataSource.Name, organizationId)
-		if err = self.trinoService.CreateCatalog(catalogName, updatedDataSource.Type, currentSecret); err != nil {
+		catalogName := self.engineService.GetCatalogName(newDataSource.Name, organizationId)
+		if err = self.CreateCatalog(catalogName, updatedDataSource.Type, currentSecret); err != nil {
 			return err
 		}
 
@@ -262,7 +262,7 @@ func (self *DataSourceServiceImpl) Delete(name string, organizationId string) er
 		logger.Error.Printf("Error deleting secret: %v", err)
 	}
 
-	if err = self.trinoService.RemoveCatalog(self.trinoService.GetCatalogName(name, organizationId)); err != nil {
+	if err = self.engineService.RemoveCatalog(self.engineService.GetCatalogName(name, organizationId)); err != nil {
 		logger.Error.Printf("Error deleting catalog: %v", err)
 	}
 
@@ -284,58 +284,44 @@ func (self *DataSourceServiceImpl) GetDataSourceSchemas(dataSourceName string, o
 	return schemas, nil
 }
 
-func (self *DataSourceServiceImpl) Sync(dataSourceName string, organizationId string) error {
-	catalogName := self.trinoService.GetCatalogName(dataSourceName, organizationId)
+func (self *DataSourceServiceImpl) CreateCatalog(catalogName string, dataSourceType models.DataSourceType, secret string) error {
+	var err error
 
-	// use trino get catalog schema instead of writing it all again
-	var psqlSchemas []models.PSQLSchema
-	err := self.trinoService.Query(fmt.Sprintf("SELECT nspname FROM %s.pg_catalog.pg_namespace WHERE nspname NOT IN ('pg_toast', 'pg_catalog', 'public', 'information_schema')", catalogName), &psqlSchemas)
+	switch dataSourceType {
+	case models.PostgreSQL:
+		psql := NewPostgreSQLDataSourceDatabase(self.ctx, self.engineService, self.schemaService)
+		err = psql.CreateCatalog(catalogName, dataSourceType, secret)
+	case models.MySQL:
+		mysql := NewMySQLDataSourceDatabase(self.ctx, self.engineService, self.schemaService)
+		err = mysql.CreateCatalog(catalogName, dataSourceType, secret)
+	default:
+		return errors.New("Invalid Data Source Type")
+	}
+
 	if err != nil {
 		return err
 	}
 
-	for _, psqlSchema := range psqlSchemas {
-		var psqlTables []models.PSQLTable
-		err := self.trinoService.Query(fmt.Sprintf("SELECT relname, relnamespace FROM %s.pg_catalog.pg_class c INNER JOIN %s.pg_catalog.pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = '%s'", catalogName, catalogName, psqlSchema.Nspname), &psqlTables)
-		if err != nil {
-			return err
-		}
+	return nil
+}
 
-		var tables []models.Table
-		for _, psqlTable := range psqlTables {
+func (self *DataSourceServiceImpl) Sync(dataSourceName string, organizationId string, dataSourceType models.DataSourceType) error {
+	var err error
 
-			var psqlFields []models.PSQLField
-			err := self.trinoService.Query(fmt.Sprintf("SELECT * FROM %s.pg_catalog.pg_attribute a INNER JOIN %s.pg_catalog.pg_class c ON a.attrelid = c.oid WHERE c.relname = '%s'", catalogName, catalogName, psqlTable.Relname), &psqlFields)
-			if err != nil {
-				return err
-			}
+	switch dataSourceType {
+	case models.PostgreSQL:
+		logger.Info.Println("Sync for POSTGRESQL")
+		psql := NewPostgreSQLDataSourceDatabase(self.ctx, self.engineService, self.schemaService)
+		err = psql.Sync(dataSourceName, organizationId)
+	case models.MySQL:
+		mysql := NewMySQLDataSourceDatabase(self.ctx, self.engineService, self.schemaService)
+		err = mysql.Sync(dataSourceName, organizationId)
+	default:
+		return errors.New("Invalid Data Source Type")
+	}
 
-			var fields []models.Field
-			for _, psqlField := range psqlFields {
-				field := models.Field{
-					Name: psqlField.Attname,
-				}
-				fields = append(fields, field)
-			}
-
-			table := models.Table{
-				Name:   psqlTable.Relname,
-				Fields: fields,
-			}
-			tables = append(tables, table)
-		}
-
-		schema := models.Schema{
-			Name:           psqlSchema.Nspname,
-			Tables:         tables,
-			OrganizationId: organizationId,
-			DataSourceName: dataSourceName,
-		}
-
-		err = self.schemaService.Create(schema)
-		if err != nil {
-			return err
-		}
+	if err != nil {
+		return err
 	}
 
 	return nil

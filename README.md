@@ -34,6 +34,11 @@ Poligono is designed to run in a containerized environment. Here's the simplest 
 
 Once the Docker installation is complete, go to [http://localhost:8888/v1/swagger/index.html#/](http://localhost:8888/v1/swagger/index.html#/) to access the Poligono OpenAPI Specification from your browser.
 
+## 💾 Supported Data Sources
+
+* PostgreSQL
+* MySQL
+
 <!-- CONTRIBUTING -->
 ## Contributing
 

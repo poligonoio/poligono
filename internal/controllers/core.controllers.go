@@ -16,10 +16,10 @@ import (
 type CoreController struct {
 	CoreService       services.CoreService
 	DataSourceService services.DataSourceService
-	TrinoService      services.TrinoService
+	TrinoService      services.EngineService
 }
 
-func NewCoreController(coreService services.CoreService, dataSourceService services.DataSourceService, trinoService services.TrinoService) CoreController {
+func NewCoreController(coreService services.CoreService, dataSourceService services.DataSourceService, trinoService services.EngineService) CoreController {
 	return CoreController{
 		CoreService:       coreService,
 		DataSourceService: dataSourceService,

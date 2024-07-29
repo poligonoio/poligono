@@ -370,7 +370,8 @@
                 },
                 "type": {
                     "enum": [
-                        "PostgreSQL"
+                        "PostgreSQL",
+                        "MySQL"
                     ],
                     "allOf": [
                         {
@@ -383,10 +384,12 @@
         "models.DataSourceType": {
             "type": "string",
             "enum": [
-                "PostgreSQL"
+                "PostgreSQL",
+                "MySQL"
             ],
             "x-enum-varnames": [
-                "PostgreSQL"
+                "PostgreSQL",
+                "MySQL"
             ]
         },
         "models.GenerateQueryActivity": {
@@ -495,7 +498,8 @@
                 },
                 "type": {
                     "enum": [
-                        "PostgreSQL"
+                        "PostgreSQL",
+                        "MySQL"
                     ],
                     "allOf": [
                         {
