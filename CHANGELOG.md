@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.1](https://github.com/poligonoio/poligono/compare/v0.2.0...v0.2.1) (2024-07-31)
+
+
+### Bug Fixes
+
+* add support for MariaDB as a data source option ([4e8b00a](https://github.com/poligonoio/poligono/commit/4e8b00a03bd04de256452e8e2c10e65722f1fd63))
+* add support for multiple data source type starting with MySQL ([1593467](https://github.com/poligonoio/poligono/commit/15934679d8c79ddbac14f77e5045e2914c7f575f))
+
 ## [0.2.0](https://github.com/poligonoio/poligono/compare/v0.1.2...v0.2.0) (2024-07-19)
 
 
