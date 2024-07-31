@@ -38,6 +38,7 @@ Once the Docker installation is complete, go to [http://localhost:8888/v1/swagge
 
 * PostgreSQL
 * MySQL
+* MariaDB
 
 <!-- CONTRIBUTING -->
 ## Contributing

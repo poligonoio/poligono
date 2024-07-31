@@ -11,6 +11,7 @@ definitions:
         enum:
         - PostgreSQL
         - MySQL
+        - MariaDB
     required:
     - name
     - secret
@@ -20,10 +21,12 @@ definitions:
     enum:
     - PostgreSQL
     - MySQL
+    - MariaDB
     type: string
     x-enum-varnames:
     - PostgreSQL
     - MySQL
+    - MariaDB
   models.GenerateQueryActivity:
     properties:
       data:

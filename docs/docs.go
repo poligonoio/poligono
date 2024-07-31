@@ -380,7 +380,8 @@ const docTemplate = `{
                 "type": {
                     "enum": [
                         "PostgreSQL",
-                        "MySQL"
+                        "MySQL",
+                        "MariaDB"
                     ],
                     "allOf": [
                         {
@@ -394,11 +395,13 @@ const docTemplate = `{
             "type": "string",
             "enum": [
                 "PostgreSQL",
-                "MySQL"
+                "MySQL",
+                "MariaDB"
             ],
             "x-enum-varnames": [
                 "PostgreSQL",
-                "MySQL"
+                "MySQL",
+                "MariaDB"
             ]
         },
         "models.GenerateQueryActivity": {
