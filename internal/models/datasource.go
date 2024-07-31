@@ -11,6 +11,7 @@ type DataSourceType string
 const (
 	PostgreSQL DataSourceType = "PostgreSQL"
 	MySQL      DataSourceType = "MySQL"
+	MariaDB    DataSourceType = "MariaDB"
 )
 
 type EngineType string
@@ -25,7 +26,7 @@ type DataSource struct {
 	Name           string             `json:"name"  bson:"name" validate:"required"`
 	OrganizationId string             `json:"organization_id" bson:"organization_id" validate:"required" swaggerignore:"true"`
 	CreatedBy      string             `json:"-" bson:"created_by" validate:"required"`
-	Type           DataSourceType     `json:"type" bson:"type" validate:"required,oneof=PostgreSQL MySQL"`
+	Type           DataSourceType     `json:"type" bson:"type" validate:"required,oneof=PostgreSQL MySQL MariaDB"`
 	Secret         string             `json:"secret,omitempty" bson:"-" validate:"required"`
 	CreatedAt      time.Time          `json:"created_at" bson:"created_at" validate:"required" swaggerignore:"true"`
 	UpdatedAt      time.Time          `json:"updated_at" bson:"updated_at" validate:"required" swaggerignore:"true"`

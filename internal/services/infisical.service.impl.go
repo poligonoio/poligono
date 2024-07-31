@@ -93,7 +93,6 @@ func (self *InfisicalServiceImpl) GetSecret(key string) (string, error) {
 }
 
 func (self *InfisicalServiceImpl) CreateSecret(key string, secret string) error {
-	logger.Info.Println(self.token)
 	url := fmt.Sprintf("https://app.infisical.com/api/v3/secrets/raw/%s", key)
 
 	requestBody := models.InfisicalCreateSecretRequestBody{

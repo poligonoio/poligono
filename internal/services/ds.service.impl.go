@@ -294,6 +294,9 @@ func (self *DataSourceServiceImpl) CreateCatalog(catalogName string, dataSourceT
 	case models.MySQL:
 		mysql := NewMySQLDataSourceDatabase(self.ctx, self.engineService, self.schemaService)
 		err = mysql.CreateCatalog(catalogName, dataSourceType, secret)
+	case models.MariaDB:
+		mariadb := NewMariaDBDataSourceDatabase(self.ctx, self.engineService, self.schemaService)
+		err = mariadb.CreateCatalog(catalogName, dataSourceType, secret)
 	default:
 		return errors.New("Invalid Data Source Type")
 	}
@@ -310,12 +313,14 @@ func (self *DataSourceServiceImpl) Sync(dataSourceName string, organizationId st
 
 	switch dataSourceType {
 	case models.PostgreSQL:
-		logger.Info.Println("Sync for POSTGRESQL")
 		psql := NewPostgreSQLDataSourceDatabase(self.ctx, self.engineService, self.schemaService)
 		err = psql.Sync(dataSourceName, organizationId)
 	case models.MySQL:
 		mysql := NewMySQLDataSourceDatabase(self.ctx, self.engineService, self.schemaService)
 		err = mysql.Sync(dataSourceName, organizationId)
+	case models.MariaDB:
+		mariadb := NewMariaDBDataSourceDatabase(self.ctx, self.engineService, self.schemaService)
+		err = mariadb.Sync(dataSourceName, organizationId)
 	default:
 		return errors.New("Invalid Data Source Type")
 	}

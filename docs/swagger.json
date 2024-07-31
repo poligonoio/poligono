@@ -371,7 +371,8 @@
                 "type": {
                     "enum": [
                         "PostgreSQL",
-                        "MySQL"
+                        "MySQL",
+                        "MariaDB"
                     ],
                     "allOf": [
                         {
@@ -385,11 +386,13 @@
             "type": "string",
             "enum": [
                 "PostgreSQL",
-                "MySQL"
+                "MySQL",
+                "MariaDB"
             ],
             "x-enum-varnames": [
                 "PostgreSQL",
-                "MySQL"
+                "MySQL",
+                "MariaDB"
             ]
         },
         "models.GenerateQueryActivity": {
