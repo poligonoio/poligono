@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/poligonoio/vega-core/internal/models"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type PostgresSQLDataSourceTypeImpl struct {
@@ -23,18 +24,17 @@ func NewPostgreSQLDataSourceDatabase(ctx context.Context, engineService EngineSe
 	}
 }
 
-func (self *PostgresSQLDataSourceTypeImpl) Sync(dataSourceName string, organizationId string) error {
-	catalogName := self.engineService.GetCatalogName(dataSourceName, organizationId)
-
+func (self *PostgresSQLDataSourceTypeImpl) Sync(dataSourceId primitive.ObjectID) error {
+	catalogName := dataSourceId.Hex()
 	var sqlSchemas []models.SQLSchema
-	err := self.engineService.Query(fmt.Sprintf("SELECT nspname AS name FROM %s.pg_catalog.pg_namespace WHERE nspname NOT IN ('pg_toast', 'pg_catalog', 'public', 'information_schema')", catalogName), &sqlSchemas)
+	err := self.engineService.Query(fmt.Sprintf("SELECT nspname AS name FROM data_source_%s.pg_catalog.pg_namespace WHERE nspname NOT IN ('pg_toast', 'pg_catalog', 'public', 'information_schema')", catalogName), &sqlSchemas)
 	if err != nil {
 		return err
 	}
 
 	for _, sqlSchema := range sqlSchemas {
 		var psqlTables []models.SQLTable
-		err := self.engineService.Query(fmt.Sprintf("SELECT relname AS name FROM %s.pg_catalog.pg_class c INNER JOIN %s.pg_catalog.pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = '%s'", catalogName, catalogName, sqlSchema.Name), &psqlTables)
+		err := self.engineService.Query(fmt.Sprintf("SELECT relname AS name FROM data_source_%s.pg_catalog.pg_class c INNER JOIN data_source_%s.pg_catalog.pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = '%s'", catalogName, catalogName, sqlSchema.Name), &psqlTables)
 		if err != nil {
 			return err
 		}
@@ -43,7 +43,7 @@ func (self *PostgresSQLDataSourceTypeImpl) Sync(dataSourceName string, organizat
 		for _, psqlTable := range psqlTables {
 
 			var psqlFields []models.SQLField
-			err := self.engineService.Query(fmt.Sprintf("SELECT attname AS name FROM %s.pg_catalog.pg_attribute a INNER JOIN %s.pg_catalog.pg_class c ON a.attrelid = c.oid WHERE c.relname = '%s'", catalogName, catalogName, psqlTable.Name), &psqlFields)
+			err := self.engineService.Query(fmt.Sprintf("SELECT attname AS name FROM data_source_%s.pg_catalog.pg_attribute a INNER JOIN data_source_%s.pg_catalog.pg_class c ON a.attrelid = c.oid WHERE c.relname = '%s'", catalogName, catalogName, psqlTable.Name), &psqlFields)
 			if err != nil {
 				return err
 			}
@@ -64,10 +64,9 @@ func (self *PostgresSQLDataSourceTypeImpl) Sync(dataSourceName string, organizat
 		}
 
 		schema := models.Schema{
-			Name:           sqlSchema.Name,
-			Tables:         tables,
-			OrganizationId: organizationId,
-			DataSourceName: dataSourceName,
+			Name:         sqlSchema.Name,
+			DataSourceId: dataSourceId,
+			Tables:       tables,
 		}
 
 		err = self.schemaService.Create(schema)
@@ -93,7 +92,7 @@ func (self *PostgresSQLDataSourceTypeImpl) CreateCatalog(catalogName string, dat
 		psqlString = fmt.Sprintf("jdbc:postgresql://%s:%s/%s", psql.Host, strconv.Itoa(psql.Port), psql.Database)
 	}
 
-	query := fmt.Sprintf("CREATE CATALOG %s USING postgresql WITH (\"connection-url\" = '%s', \"connection-user\" = '%s', \"connection-password\" = '%s', \"case-insensitive-name-matching\" = 'true', \"postgresql.include-system-tables\" = 'true')", catalogName, psqlString, psql.User, psql.Password)
+	query := fmt.Sprintf("CREATE CATALOG data_source_%s USING postgresql WITH (\"connection-url\" = '%s', \"connection-user\" = '%s', \"connection-password\" = '%s', \"case-insensitive-name-matching\" = 'true', \"postgresql.include-system-tables\" = 'true')", catalogName, psqlString, psql.User, psql.Password)
 
 	if err := self.engineService.Query(query, nil); err != nil {
 		return err

@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/poligonoio/vega-core/internal/models"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type MariaDBDataSourceTypeImpl struct {
@@ -23,11 +24,10 @@ func NewMariaDBDataSourceDatabase(ctx context.Context, engineService EngineServi
 	}
 }
 
-func (self *MariaDBDataSourceTypeImpl) Sync(dataSourceName string, organizationId string) error {
-	catalogName := self.engineService.GetCatalogName(dataSourceName, organizationId)
-
+func (self *MariaDBDataSourceTypeImpl) Sync(dataSourceId primitive.ObjectID) error {
+	catalogName := dataSourceId.Hex()
 	var sqlSchemas []models.SQLSchema
-	err := self.engineService.Query(fmt.Sprintf("SELECT schema_name AS name FROM %s.information_schema.schemata WHERE schema_name NOT IN ('sys', 'performance_schema')", catalogName), &sqlSchemas)
+	err := self.engineService.Query(fmt.Sprintf("SELECT schema_name AS name FROM data_source_%s.information_schema.schemata WHERE schema_name NOT IN ('sys', 'performance_schema')", catalogName), &sqlSchemas)
 	if err != nil {
 		return err
 	}
@@ -35,7 +35,7 @@ func (self *MariaDBDataSourceTypeImpl) Sync(dataSourceName string, organizationI
 	for _, sqlSchema := range sqlSchemas {
 		var sqlTables []models.SQLSchema
 
-		err := self.engineService.Query(fmt.Sprintf("SELECT table_name AS name FROM %s.information_schema.tables WHERE table_schema = '%s'", catalogName, sqlSchema.Name), &sqlTables)
+		err := self.engineService.Query(fmt.Sprintf("SELECT table_name AS name FROM data_source_%s.information_schema.tables WHERE table_schema = '%s'", catalogName, sqlSchema.Name), &sqlTables)
 		if err != nil {
 			return err
 		}
@@ -43,7 +43,7 @@ func (self *MariaDBDataSourceTypeImpl) Sync(dataSourceName string, organizationI
 		var tables []models.Table
 		for _, sqlTable := range sqlTables {
 			var sqlFields []models.SQLField
-			err := self.engineService.Query(fmt.Sprintf("SELECT column_name AS name FROM %s.information_schema.columns WHERE table_name = '%s'", catalogName, sqlTable.Name), &sqlFields)
+			err := self.engineService.Query(fmt.Sprintf("SELECT column_name AS name FROM data_source_%s.information_schema.columns WHERE table_name = '%s'", catalogName, sqlTable.Name), &sqlFields)
 			if err != nil {
 				return err
 			}
@@ -64,10 +64,8 @@ func (self *MariaDBDataSourceTypeImpl) Sync(dataSourceName string, organizationI
 		}
 
 		schema := models.Schema{
-			Name:           sqlSchema.Name,
-			Tables:         tables,
-			OrganizationId: organizationId,
-			DataSourceName: dataSourceName,
+			Name:   sqlSchema.Name,
+			Tables: tables,
 		}
 
 		err = self.schemaService.Create(schema)
@@ -93,7 +91,7 @@ func (self *MariaDBDataSourceTypeImpl) CreateCatalog(catalogName string, dataSou
 		mysqlString = fmt.Sprintf("jdbc:mariadb://%s:%s/%s", mysql.Host, strconv.Itoa(mysql.Port), mysql.Database)
 	}
 
-	query := fmt.Sprintf("CREATE CATALOG %s USING mariadb WITH (\"connection-url\" = '%s', \"connection-user\" = '%s', \"connection-password\" = '%s', \"case-insensitive-name-matching\" = 'true')", catalogName, mysqlString, mysql.User, mysql.Password)
+	query := fmt.Sprintf("CREATE CATALOG data_source_%s USING mariadb WITH (\"connection-url\" = '%s', \"connection-user\" = '%s', \"connection-password\" = '%s', \"case-insensitive-name-matching\" = 'true')", catalogName, mysqlString, mysql.User, mysql.Password)
 
 	if err := self.engineService.Query(query, nil); err != nil {
 		return err

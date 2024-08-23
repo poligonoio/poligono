@@ -30,7 +30,7 @@ func NewTrinoEngineService(ctx context.Context) (EngineService, error) {
 }
 
 func (self *TrinoEngineServiceImpl) RemoveCatalog(catalogName string) error {
-	query := fmt.Sprintf("DROP CATALOG %s", catalogName)
+	query := fmt.Sprintf("DROP CATALOG data_source_%s", catalogName)
 
 	if err := self.Query(query, nil); err != nil {
 		return err
@@ -144,12 +144,4 @@ func (self *TrinoEngineServiceImpl) GetRawData(query string) ([]map[string]inter
 	}
 
 	return results, nil
-}
-
-func (self *TrinoEngineServiceImpl) GetCatalogName(name string, organizationId string) string {
-	if name != "" && organizationId != "" {
-		return strings.ToLower(fmt.Sprintf("%s_%s", name, organizationId))
-	}
-
-	return ""
 }

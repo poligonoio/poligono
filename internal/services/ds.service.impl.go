@@ -32,7 +32,7 @@ func NewDataSourceService(ctx context.Context, dataSourceCollection *mongo.Colle
 	}
 }
 
-func (self *DataSourceServiceImpl) GetByName(name string, organizationId string) (models.DataSource, error) {
+func (self *DataSourceServiceImpl) GetByName(name string, organizationId string, includeSecret bool) (models.DataSource, error) {
 	var dataSource models.DataSource
 
 	filter := bson.D{bson.E{Key: "name", Value: name}, bson.E{Key: "organization_id", Value: organizationId}}
@@ -41,9 +41,30 @@ func (self *DataSourceServiceImpl) GetByName(name string, organizationId string)
 		return dataSource, err
 	}
 
-	dataSource.Secret, err = self.infisicalService.GetSecret(fmt.Sprintf("%s-%s", dataSource.Name, dataSource.OrganizationId))
+	if includeSecret {
+		dataSource.Secret, err = self.infisicalService.GetSecret(dataSource.ID.Hex())
+		if err != nil {
+			return dataSource, err
+		}
+	}
+
+	return dataSource, nil
+}
+
+func (self *DataSourceServiceImpl) GetById(id primitive.ObjectID, includeSecret bool) (models.DataSource, error) {
+	var dataSource models.DataSource
+
+	filter := bson.M{"_id": id}
+	err := self.dataSourceCollection.FindOne(self.ctx, filter).Decode(&dataSource)
 	if err != nil {
 		return dataSource, err
+	}
+
+	if includeSecret {
+		dataSource.Secret, err = self.infisicalService.GetSecret(dataSource.ID.Hex())
+		if err != nil {
+			return dataSource, err
+		}
 	}
 
 	return dataSource, nil
@@ -65,69 +86,70 @@ func (self *DataSourceServiceImpl) GetAll(organizationId string) ([]models.DataS
 	return dataSources, nil
 }
 
-func (self *DataSourceServiceImpl) Create(dataSource models.DataSource) error {
+func (self *DataSourceServiceImpl) Create(dataSource models.DataSource) (models.DataSource, error) {
 	// check if data source already exist
-	query := bson.D{bson.E{Key: "name", Value: dataSource.Name}, bson.E{Key: "organization_id", Value: dataSource.OrganizationId}}
-	count, err := self.dataSourceCollection.CountDocuments(self.ctx, query)
+	filter := bson.D{bson.E{Key: "name", Value: dataSource.Name}, bson.E{Key: "organization_id", Value: dataSource.OrganizationId}}
+	count, err := self.dataSourceCollection.CountDocuments(self.ctx, filter)
 	if err != nil {
-		return err
+		return models.DataSource{}, err
 	}
 
 	if count > 0 {
-		return errors.New("Data source with that name already exists")
+		return models.DataSource{}, errors.New("Data source with that name already exists")
 	}
+
+	dataSource.ID = primitive.NewObjectID()
 
 	_, err = self.dataSourceCollection.InsertOne(self.ctx, dataSource)
 	if err != nil {
-		return err
+		return models.DataSource{}, err
+	}
+
+	insertedDataSource, err := self.GetByName(dataSource.Name, dataSource.OrganizationId, false)
+	if err != nil {
+		_, cleanUpErr := self.Delete(insertedDataSource.Name, insertedDataSource.OrganizationId)
+		if cleanUpErr != nil {
+			logger.Error.Printf("Data source clean up failed: %v", cleanUpErr)
+		}
+
+		return models.DataSource{}, err
 	}
 
 	// Create secret
-	if err = self.infisicalService.CreateSecret(fmt.Sprintf("%s-%s", dataSource.Name, dataSource.OrganizationId), dataSource.Secret); err != nil {
-		cleanUpErr := self.Delete(dataSource.Name, dataSource.OrganizationId)
+	if err = self.infisicalService.CreateSecret(insertedDataSource.ID.Hex(), dataSource.Secret); err != nil {
+		_, cleanUpErr := self.Delete(insertedDataSource.Name, insertedDataSource.OrganizationId)
 		if cleanUpErr != nil {
 			logger.Error.Printf("Data source clean up failed: %v", cleanUpErr)
 		}
 
-		return err
+		return models.DataSource{}, err
 	}
 
 	// Create catalog
-	catalogName := fmt.Sprintf("%s_%s", dataSource.Name, dataSource.OrganizationId)
-	if err = self.CreateCatalog(catalogName, dataSource.Type, dataSource.Secret); err != nil {
-		cleanUpErr := self.Delete(dataSource.Name, dataSource.OrganizationId)
+	if err = self.CreateCatalog(insertedDataSource.ID.Hex(), dataSource.Type, dataSource.Secret); err != nil {
+		_, cleanUpErr := self.Delete(dataSource.Name, dataSource.OrganizationId)
 		if cleanUpErr != nil {
 			logger.Error.Printf("Data source clean up failed: %v", cleanUpErr)
 		}
 
-		return err
+		return models.DataSource{}, err
 	}
 
 	// Sync schema
-	createdDataSource, err := self.GetByName(dataSource.Name, dataSource.OrganizationId)
+	err = self.Sync(insertedDataSource.ID, insertedDataSource.Type)
 	if err != nil {
-		cleanUpErr := self.Delete(dataSource.Name, dataSource.OrganizationId)
+		_, cleanUpErr := self.Delete(insertedDataSource.Name, insertedDataSource.OrganizationId)
 		if cleanUpErr != nil {
 			logger.Error.Printf("Data source clean up failed: %v", cleanUpErr)
 		}
 
-		return err
+		return models.DataSource{}, err
 	}
 
-	err = self.Sync(createdDataSource.Name, createdDataSource.OrganizationId, createdDataSource.Type)
-	if err != nil {
-		cleanUpErr := self.Delete(dataSource.Name, dataSource.OrganizationId)
-		if cleanUpErr != nil {
-			logger.Error.Printf("Data source clean up failed: %v", cleanUpErr)
-		}
-
-		return err
-	}
-
-	return nil
+	return insertedDataSource, nil
 }
 
-func (self *DataSourceServiceImpl) Update(name string, organizationId string, newDataSource models.UpdateRequestDataSourceBody) error {
+func (self *DataSourceServiceImpl) Update(name string, organizationId string, newDataSource models.UpdateRequestDataSourceBody) (models.DataSource, error) {
 	updateFields := bson.D{}
 
 	typeData := reflect.TypeOf(newDataSource)
@@ -151,132 +173,80 @@ func (self *DataSourceServiceImpl) Update(name string, organizationId string, ne
 		},
 	}
 
-	query := bson.D{bson.E{Key: "name", Value: name}, bson.E{Key: "organization_id", Value: organizationId}}
-	result, err := self.dataSourceCollection.UpdateOne(context.TODO(), query, update)
+	filter := bson.D{bson.E{Key: "name", Value: name}, bson.E{Key: "organization_id", Value: organizationId}}
+	result, err := self.dataSourceCollection.UpdateOne(context.TODO(), filter, update)
 	if err != nil {
-		return err
+		return models.DataSource{}, err
 	}
 
 	if result.MatchedCount < 1 {
-		return fmt.Errorf("No data source found with name %s in the organization %s", name, organizationId)
+		return models.DataSource{}, fmt.Errorf("No data source found with name %s in the organization %s", name, organizationId)
+	}
+
+	updatedDataSource, err := self.GetByName(newDataSource.Name, organizationId, false)
+	if err != nil {
+		return models.DataSource{}, err
 	}
 
 	// update data source secret
-	if newDataSource.Secret != "" && newDataSource.Name != "" {
-		if err = self.infisicalService.DeleteSecret(fmt.Sprintf("%s-%s", name, organizationId)); err != nil {
-			return err
+	if newDataSource.Secret != "" {
+		if err := self.infisicalService.UpdateSecret(updatedDataSource.ID.Hex(), newDataSource.Secret); err != nil {
+			return models.DataSource{}, err
 		}
 
-		if err = self.infisicalService.CreateSecret(fmt.Sprintf("%s-%s", newDataSource.Name, organizationId), newDataSource.Secret); err != nil {
-			return err
+		if err = self.engineService.RemoveCatalog(updatedDataSource.ID.Hex()); err != nil {
+			return models.DataSource{}, err
 		}
 
-		// Update trino catalog
-		updatedDataSource, err := self.GetByName(newDataSource.Name, organizationId)
-		if err != nil {
-			return err
-		}
-
-		if err = self.engineService.RemoveCatalog(self.engineService.GetCatalogName(name, organizationId)); err != nil {
-			return err
-		}
-
-		catalogName := fmt.Sprintf("%s_%s", newDataSource.Name, organizationId)
-		if err = self.CreateCatalog(catalogName, updatedDataSource.Type, newDataSource.Secret); err != nil {
-			return err
-		}
-
-		// Update data source name on schema
-		if err = self.schemaService.UpdateDataSourceName(name, newDataSource.Name, organizationId); err != nil {
-			return err
-		}
-	} else if newDataSource.Secret != "" {
-		if err := self.infisicalService.UpdateSecret(fmt.Sprintf("%s-%s", name, organizationId), newDataSource.Secret); err != nil {
-			return err
-		}
-
-		// Update trino catalog
-		updatedDataSource, err := self.GetByName(newDataSource.Name, organizationId)
-		if err != nil {
-			return err
-		}
-
-		if err = self.engineService.RemoveCatalog(self.engineService.GetCatalogName(name, organizationId)); err != nil {
-			return err
-		}
-
-		catalogName := self.engineService.GetCatalogName(name, organizationId)
-		if err = self.CreateCatalog(catalogName, updatedDataSource.Type, newDataSource.Secret); err != nil {
-			return err
-		}
-	} else if newDataSource.Name != "" {
-		currentSecret, err := self.infisicalService.GetSecret(fmt.Sprintf("%s-%s", name, organizationId))
-		if err != nil {
-			return err
-		}
-
-		if err = self.infisicalService.DeleteSecret(fmt.Sprintf("%s-%s", name, organizationId)); err != nil {
-			return err
-		}
-
-		if err = self.infisicalService.CreateSecret(fmt.Sprintf("%s-%s", newDataSource.Name, organizationId), currentSecret); err != nil {
-			return err
-		}
-
-		// Update trino catalog
-		updatedDataSource, err := self.GetByName(newDataSource.Name, organizationId)
-		if err != nil {
-			return err
-		}
-
-		if err = self.engineService.RemoveCatalog(self.engineService.GetCatalogName(name, organizationId)); err != nil {
-			return err
-		}
-
-		catalogName := self.engineService.GetCatalogName(newDataSource.Name, organizationId)
-		if err = self.CreateCatalog(catalogName, updatedDataSource.Type, currentSecret); err != nil {
-			return err
-		}
-
-		// Update data source name on schema
-		if err = self.schemaService.UpdateDataSourceName(name, newDataSource.Name, organizationId); err != nil {
-			return err
+		if err = self.CreateCatalog(updatedDataSource.ID.Hex(), updatedDataSource.Type, newDataSource.Secret); err != nil {
+			return models.DataSource{}, err
 		}
 	}
 
-	return nil
+	return updatedDataSource, nil
 }
 
-func (self *DataSourceServiceImpl) Delete(name string, organizationId string) error {
+func (self *DataSourceServiceImpl) Delete(name string, organizationId string) (models.DataSource, error) {
+	// get document before deletion
 	filter := bson.D{bson.E{Key: "name", Value: name}, bson.E{Key: "organization_id", Value: organizationId}}
-	result, err := self.dataSourceCollection.DeleteOne(self.ctx, filter)
+	dataSource, err := self.GetByName(name, organizationId, false)
 	if err != nil {
 		logger.Error.Printf("Error deleting data source document: %v", err)
 	}
 
+	result, err := self.dataSourceCollection.DeleteOne(self.ctx, filter)
+	if err != nil {
+		logger.Error.Printf("Error deleting data source document: %v", err)
+		return dataSource, err
+	}
+
 	if result.DeletedCount < 1 {
 		logger.Error.Printf("No Data source found with name %s in the organization %s", name, organizationId)
+		return dataSource, err
 	}
 
-	if err = self.infisicalService.DeleteSecret(fmt.Sprintf("%s-%s", name, organizationId)); err != nil {
+	if err = self.infisicalService.DeleteSecret(dataSource.ID.Hex()); err != nil {
 		logger.Error.Printf("Error deleting secret: %v", err)
+		return dataSource, err
 	}
 
-	if err = self.engineService.RemoveCatalog(self.engineService.GetCatalogName(name, organizationId)); err != nil {
+	if err = self.engineService.RemoveCatalog(dataSource.ID.Hex()); err != nil {
 		logger.Error.Printf("Error deleting catalog: %v", err)
+		return dataSource, err
 	}
 
-	if err = self.schemaService.Delete(name, organizationId); err != nil {
+	if err = self.schemaService.Delete(dataSource.ID); err != nil {
 		logger.Error.Printf("Error deleting schema document: %v", err)
+		return dataSource, err
 	}
 
-	return nil
+	return dataSource, nil
 }
 
-func (self *DataSourceServiceImpl) GetDataSourceSchemas(dataSourceName string, organizationId string) ([]models.Schema, error) {
+func (self *DataSourceServiceImpl) GetDataSourceSchemas(id primitive.ObjectID) ([]models.Schema, error) {
 	var schemas []models.Schema
 
-	err := self.schemaService.GetAll(dataSourceName, organizationId, &schemas)
+	err := self.schemaService.GetAll(id, &schemas)
 	if err != nil {
 		return schemas, err
 	}
@@ -308,19 +278,19 @@ func (self *DataSourceServiceImpl) CreateCatalog(catalogName string, dataSourceT
 	return nil
 }
 
-func (self *DataSourceServiceImpl) Sync(dataSourceName string, organizationId string, dataSourceType models.DataSourceType) error {
+func (self *DataSourceServiceImpl) Sync(id primitive.ObjectID, dataSourceType models.DataSourceType) error {
 	var err error
 
 	switch dataSourceType {
 	case models.PostgreSQL:
 		psql := NewPostgreSQLDataSourceDatabase(self.ctx, self.engineService, self.schemaService)
-		err = psql.Sync(dataSourceName, organizationId)
+		err = psql.Sync(id)
 	case models.MySQL:
 		mysql := NewMySQLDataSourceDatabase(self.ctx, self.engineService, self.schemaService)
-		err = mysql.Sync(dataSourceName, organizationId)
+		err = mysql.Sync(id)
 	case models.MariaDB:
 		mariadb := NewMariaDBDataSourceDatabase(self.ctx, self.engineService, self.schemaService)
-		err = mariadb.Sync(dataSourceName, organizationId)
+		err = mariadb.Sync(id)
 	default:
 		return errors.New("Invalid Data Source Type")
 	}

@@ -65,7 +65,7 @@ func (self *DataSourceController) GetDataSourceByName(c *gin.Context) {
 		})
 	}
 
-	dataSource, err := self.DataSourceService.GetByName(name, ownerId)
+	dataSource, err := self.DataSourceService.GetByName(name, ownerId, false)
 	if err != nil {
 		logger.Error.Println(fmt.Printf("[%s][%s] failed to get data source by name: %v\n", ownerId, sub, err))
 
@@ -180,8 +180,6 @@ func (self *DataSourceController) CreateDataSource(c *gin.Context) {
 
 	newDataSource.CreatedBy = sub
 	newDataSource.OrganizationId = ownerId
-	// newDataSource.UserInfo.Name = userData.Name
-	// newDataSource.UserInfo.Picture = userData.Picture
 	newDataSource.CreatedAt = time.Now()
 	newDataSource.UpdatedAt = time.Now()
 
@@ -196,7 +194,9 @@ func (self *DataSourceController) CreateDataSource(c *gin.Context) {
 		return
 	}
 
-	if err := self.DataSourceService.Create(newDataSource); err != nil {
+	createdDataSource, err := self.DataSourceService.Create(newDataSource)
+
+	if err != nil {
 		logger.Error.Println(fmt.Printf("[%s][%s] Failed to create data source: %v\n", ownerId, sub, err))
 		c.JSON(http.StatusInternalServerError, models.HTTPError{
 			Error:       "internal_server_error",
@@ -205,7 +205,7 @@ func (self *DataSourceController) CreateDataSource(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, models.HTTPSuccess{Message: "success"})
+	c.JSON(http.StatusOK, createdDataSource)
 }
 
 // @BasePath /
@@ -219,7 +219,7 @@ func (self *DataSourceController) CreateDataSource(c *gin.Context) {
 // @Produce json
 // @Param name path string true "Data Source Name" string
 // @Param Data_Source body models.UpdateRequestDataSourceBody true "Data Source"
-// @Success 200 {object} models.HTTPSuccess
+// @Success 200 {object} models.DataSource
 // @Failure 400 {object} models.HTTPError
 // @Failure 401 {object} models.HTTPError
 // @Router /datasources/{name} [put]
@@ -257,7 +257,7 @@ func (self *DataSourceController) UpdateDataSourceByName(c *gin.Context) {
 
 	updateDataSource.UpdatedAt = time.Now()
 
-	err := self.DataSourceService.Update(name, ownerId, updateDataSource)
+	updatedDataSource, err := self.DataSourceService.Update(name, ownerId, updateDataSource)
 	if err != nil {
 		logger.Error.Println(fmt.Printf("[%s][%s] failed to update data source: %v\n", ownerId, sub, err))
 		c.JSON(http.StatusBadRequest, models.HTTPError{
@@ -267,7 +267,7 @@ func (self *DataSourceController) UpdateDataSourceByName(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, models.HTTPSuccess{Message: "success"})
+	c.JSON(http.StatusOK, updatedDataSource)
 }
 
 // @BasePath /
@@ -280,7 +280,7 @@ func (self *DataSourceController) UpdateDataSourceByName(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param name path string true "Data Source Name" string
-// @Success 200 {object} models.HTTPSuccess
+// @Success 200 {object} models.DataSource
 // @Failure 400 {object} models.HTTPError
 // @Failure 401 {object} models.HTTPError
 // @Failure 500 {object} models.HTTPError
@@ -306,7 +306,7 @@ func (self *DataSourceController) DeleteDataSourceByName(c *gin.Context) {
 
 	name := c.Param("name")
 
-	err := self.DataSourceService.Delete(name, ownerId)
+	deletedDataSource, err := self.DataSourceService.Delete(name, ownerId)
 	if err != nil {
 		logger.Error.Println(fmt.Printf("[%s][%s] Failed to delete data source: %v\n", ownerId, sub, err))
 		c.JSON(http.StatusBadRequest, models.HTTPError{
@@ -316,7 +316,7 @@ func (self *DataSourceController) DeleteDataSourceByName(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, models.HTTPSuccess{Message: "success"})
+	c.JSON(http.StatusOK, deletedDataSource)
 }
 
 func (self *DataSourceController) RegisterDataSourceRoutes(rg *gin.RouterGroup) {

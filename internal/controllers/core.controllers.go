@@ -16,14 +16,14 @@ import (
 type CoreController struct {
 	CoreService       services.CoreService
 	DataSourceService services.DataSourceService
-	TrinoService      services.EngineService
+	EngineService     services.EngineService
 }
 
-func NewCoreController(coreService services.CoreService, dataSourceService services.DataSourceService, trinoService services.EngineService) CoreController {
+func NewCoreController(coreService services.CoreService, dataSourceService services.DataSourceService, engineService services.EngineService) CoreController {
 	return CoreController{
 		CoreService:       coreService,
 		DataSourceService: dataSourceService,
-		TrinoService:      trinoService,
+		EngineService:     engineService,
 	}
 }
 
@@ -74,7 +74,7 @@ func (self *CoreController) GenerateQuery(c *gin.Context) {
 	}
 
 	// Get Data source info and secret
-	ds, err := self.DataSourceService.GetByName(generateQueryBody.DataSourceName, ownerId)
+	ds, err := self.DataSourceService.GetByName(generateQueryBody.DataSourceName, ownerId, false)
 	if err != nil {
 		logger.Error.Println(fmt.Printf("[%s][%s] Data source provided is invalid: %v\n", ownerId, sub, err))
 		c.JSON(http.StatusBadRequest, models.HTTPError{
@@ -85,7 +85,7 @@ func (self *CoreController) GenerateQuery(c *gin.Context) {
 	}
 
 	// Extract schemas info from Data source
-	schemas, err := self.DataSourceService.GetDataSourceSchemas(ds.Name, ds.OrganizationId)
+	schemas, err := self.DataSourceService.GetDataSourceSchemas(ds.ID)
 	logger.Info.Println(schemas)
 	if err != nil {
 		logger.Error.Println(fmt.Printf("[%s][%s] Error extracting metadata: %v\n", ownerId, sub, err))
@@ -97,8 +97,7 @@ func (self *CoreController) GenerateQuery(c *gin.Context) {
 	}
 
 	schemasYaml, _ := yaml.Marshal(&schemas)
-	catalogName := self.TrinoService.GetCatalogName(ds.Name, ds.OrganizationId)
-	var mergedPrompt string = fmt.Sprintf("I have a PostgreSQL Catalog in Trino named %s with the following database schema:\n\n%s\n\nGive me an SQL Trino Query that provides the following information: %s\n\nTo accomplish the task correctly please consider including schema on the query and return only a query without additional text.", catalogName, string(schemasYaml), generateQueryBody.Text)
+	var mergedPrompt string = fmt.Sprintf("I have a PostgreSQL Catalog in Trino named %s with the following database schema:\n\n%s\n\nGive me an SQL Trino Query that provides the following information: %s\n\nTo accomplish the task correctly please consider including schema on the query and return only a query without additional text.", ds.ID.Hex(), string(schemasYaml), generateQueryBody.Text)
 	logger.Info.Println(mergedPrompt)
 
 	// Generate query
@@ -119,7 +118,7 @@ func (self *CoreController) GenerateQuery(c *gin.Context) {
 
 	if generateQueryBody.Execute {
 		// Get data from Data source using generated query
-		results, err = self.TrinoService.GetRawData(query)
+		results, err = self.EngineService.GetRawData(query)
 		if err != nil {
 			logger.Error.Println(fmt.Printf("[%s][%s] Failed to get data from data source:: %v\n", ownerId, sub, err))
 			c.JSON(http.StatusInternalServerError, models.HTTPError{
@@ -192,7 +191,7 @@ func (self *CoreController) ImproveQuery(c *gin.Context) {
 	}
 
 	// Get Data source info and secret
-	ds, err := self.DataSourceService.GetByName(improveQueryBody.DataSourceName, ownerId)
+	ds, err := self.DataSourceService.GetByName(improveQueryBody.DataSourceName, ownerId, false)
 	if err != nil {
 		logger.Error.Println(fmt.Printf("[%s][%s] Data source provided is invalid: %v\n", ownerId, sub, err))
 		c.JSON(http.StatusBadRequest, models.HTTPError{
@@ -203,7 +202,7 @@ func (self *CoreController) ImproveQuery(c *gin.Context) {
 	}
 
 	// Extract schemas info from Data source
-	schemas, err := self.DataSourceService.GetDataSourceSchemas(ds.Name, ds.OrganizationId)
+	schemas, err := self.DataSourceService.GetDataSourceSchemas(ds.ID)
 	logger.Info.Println(schemas)
 	if err != nil {
 		logger.Error.Println(fmt.Printf("[%s][%s] Error extracting metadata: %v\n", ownerId, sub, err))
@@ -215,8 +214,7 @@ func (self *CoreController) ImproveQuery(c *gin.Context) {
 	}
 
 	schemasYaml, _ := yaml.Marshal(&schemas)
-	catalogName := self.TrinoService.GetCatalogName(ds.Name, ds.OrganizationId)
-	var mergedPrompt string = fmt.Sprintf("I have a PostgreSQL Catalog in Trino named %s with the following database schema:\n\n%s\n\nEnhance this SQL Trino query for improved readability and performance: %s\n\nTo accomplish the task correctly please consider including schema on the query and return only a query without additional text.", catalogName, string(schemasYaml), improveQueryBody.Query)
+	var mergedPrompt string = fmt.Sprintf("I have a PostgreSQL Catalog in Trino named data_source_%s with the following database schema:\n\n%s\n\nEnhance this SQL Trino query for improved readability and performance: %s\n\nTo accomplish the task correctly please consider including schema on the query and return only a query without additional text.", ds.ID.Hex(), string(schemasYaml), improveQueryBody.Query)
 	logger.Info.Println(mergedPrompt)
 
 	// Generate query
@@ -237,7 +235,7 @@ func (self *CoreController) ImproveQuery(c *gin.Context) {
 
 	if improveQueryBody.Execute {
 		// Get data from Data source using generated query
-		results, err = self.TrinoService.GetRawData(query)
+		results, err = self.EngineService.GetRawData(query)
 		if err != nil {
 			logger.Error.Println(fmt.Printf("[%s][%s] Failed to get data from data source:: %v\n", ownerId, sub, err))
 			c.JSON(http.StatusInternalServerError, models.HTTPError{
