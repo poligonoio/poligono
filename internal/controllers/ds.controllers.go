@@ -184,7 +184,6 @@ func (self *DataSourceController) CreateDataSource(c *gin.Context) {
 	newDataSource.UpdatedAt = time.Now()
 
 	if err := self.validate.Struct(newDataSource); err != nil {
-		logger.Info.Println(newDataSource)
 		validationErr := err.(validatorv10.ValidationErrors)
 		logger.Error.Println(fmt.Printf("[%s][%s] One or more data source fields are invalid: %s\n", ownerId, sub, validationErr))
 		c.JSON(http.StatusBadRequest, models.HTTPError{

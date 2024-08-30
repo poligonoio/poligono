@@ -14,10 +14,6 @@ type ImproveQueryBody struct {
 	Execute        bool   `json:"execute"`
 }
 
-type QueryResult struct {
-	QueryMarkdown string `json:"query"`
-}
-
 type GenerateQueryActivity struct {
 	ID             primitive.ObjectID       `json:"-" bson:"_id,omitempty"`
 	Prompt         string                   `json:"prompt" bson:"prompt"`

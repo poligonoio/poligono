@@ -3,6 +3,9 @@ package utils
 import (
 	"encoding/json"
 	"reflect"
+	"strings"
+
+	"github.com/poligonoio/vega-core/pkg/logger"
 )
 
 // isZeroType checks if the value from the struct is the zero value of its type
@@ -28,4 +31,13 @@ func MapToStruct(mapObject map[string]interface{}, structOBject *interface{}) er
 	}
 
 	return nil
+}
+
+func SanitizeQuery(query string) string {
+	q := strings.ReplaceAll(query, "`", "")
+	q = strings.ReplaceAll(q, "sql", "")
+	q = strings.ReplaceAll(q, ";", "")
+	q = strings.ReplaceAll(q, "\"", "")
+
+	return q
 }

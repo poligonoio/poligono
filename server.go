@@ -67,7 +67,7 @@ func init() {
 		logger.Error.Fatalf("Couldn't create a client for gemini: %v\n", err)
 	}
 
-	model := client.GenerativeModel("gemini-1.5-pro")
+	model := client.GenerativeModel("gemini-1.5-flash")
 	logger.Info.Println("Gemini client created successfully successfully!")
 
 	// Initialize probe service and controller
