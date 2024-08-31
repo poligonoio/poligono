@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"reflect"
 	"strings"
-
-	"github.com/poligonoio/vega-core/pkg/logger"
 )
 
 // isZeroType checks if the value from the struct is the zero value of its type
