@@ -1,9 +1,12 @@
 package services
 
-import "github.com/poligonoio/vega-core/internal/models"
+import (
+	"github.com/poligonoio/vega-core/internal/models"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
 type DataSourceTypeInter interface {
 	// GetDataSourceSchemas(dataSourceName string, organizationId string) ([]models.Schema, error)
-	Sync(dataSourceName string, organizationId string) error
+	Sync(dataSourceId primitive.ObjectID) error
 	CreateCatalog(catalogName string, dataSourceType models.DataSourceType, secret string) error
 }

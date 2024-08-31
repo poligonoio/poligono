@@ -22,7 +22,7 @@ const (
 )
 
 type DataSource struct {
-	ID             primitive.ObjectID `json:"-" bson:"omitempty,_id" swaggerignore:"true"`
+	ID             primitive.ObjectID `json:"-" bson:"_id" swaggerignore:"true"`
 	Name           string             `json:"name"  bson:"name" validate:"required"`
 	OrganizationId string             `json:"organization_id" bson:"organization_id" validate:"required" swaggerignore:"true"`
 	CreatedBy      string             `json:"-" bson:"created_by" validate:"required"`

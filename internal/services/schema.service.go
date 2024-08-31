@@ -2,11 +2,11 @@ package services
 
 import (
 	"github.com/poligonoio/vega-core/internal/models"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type SchemaService interface {
 	Create(schema models.Schema) error
-	GetAll(dataSourceName string, organizationId string, schemas *[]models.Schema) error
-	UpdateDataSourceName(dataSourceName string, newDataSourceName string, organizationId string) error
-	Delete(dataSourceName string, organizationId string) error
+	GetAll(dataSourceId primitive.ObjectID, schemas *[]models.Schema) error
+	Delete(dataSourceId primitive.ObjectID) error
 }

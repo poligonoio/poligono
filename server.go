@@ -67,7 +67,7 @@ func init() {
 		logger.Error.Fatalf("Couldn't create a client for gemini: %v\n", err)
 	}
 
-	model := client.GenerativeModel("gemini-1.5-pro")
+	model := client.GenerativeModel("gemini-1.5-flash")
 	logger.Info.Println("Gemini client created successfully successfully!")
 
 	// Initialize probe service and controller
@@ -114,7 +114,8 @@ func init() {
 	router := gin.Default()
 
 	router.Use(cors.New(cors.Config{
-		AllowAllOrigins:  true,
+		AllowHeaders:     []string{"Origin", "Authorization", "Content-Type"},
+		AllowOrigins:     []string{"*"},
 		AllowMethods:     []string{"GET", "POST", "DELETE", "PUT"},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
@@ -154,6 +155,7 @@ func init() {
 	}
 
 	if enableAuth && authType == "oauth2" {
+		logger.Info.Println("Ensure Valid Role")
 		basePath.Use(middlewares.EnsureValidToken())
 	}
 

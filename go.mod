@@ -5,7 +5,6 @@ go 1.21
 require (
 	github.com/auth0/go-jwt-middleware/v2 v2.2.1
 	github.com/gin-contrib/cors v1.7.2
-	github.com/gin-contrib/secure v1.1.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-playground/validator/v10 v10.20.0
 	github.com/google/generative-ai-go v0.8.0

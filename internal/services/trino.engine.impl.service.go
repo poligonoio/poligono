@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/poligonoio/vega-core/pkg/logger"
 	_ "github.com/trinodb/trino-go-client/trino"
@@ -30,7 +29,7 @@ func NewTrinoEngineService(ctx context.Context) (EngineService, error) {
 }
 
 func (self *TrinoEngineServiceImpl) RemoveCatalog(catalogName string) error {
-	query := fmt.Sprintf("DROP CATALOG %s", catalogName)
+	query := fmt.Sprintf("DROP CATALOG data_source_%s", catalogName)
 
 	if err := self.Query(query, nil); err != nil {
 		return err
@@ -40,8 +39,6 @@ func (self *TrinoEngineServiceImpl) RemoveCatalog(catalogName string) error {
 }
 
 func (self *TrinoEngineServiceImpl) Query(query string, dest interface{}) error {
-	query = strings.ReplaceAll(query, ";", "")
-
 	rows, err := self.db.Query(query)
 	if err != nil {
 		logger.Error.Printf("Failed to get data from data source: %v\n", err)
@@ -98,8 +95,6 @@ func (self *TrinoEngineServiceImpl) Query(query string, dest interface{}) error 
 }
 
 func (self *TrinoEngineServiceImpl) GetRawData(query string) ([]map[string]interface{}, error) {
-	query = strings.ReplaceAll(query, ";", "")
-
 	logger.Info.Printf("Query to be execute to get raw data from Data Source: %s\n", query)
 	rows, err := self.db.Query(query)
 
@@ -144,12 +139,4 @@ func (self *TrinoEngineServiceImpl) GetRawData(query string) ([]map[string]inter
 	}
 
 	return results, nil
-}
-
-func (self *TrinoEngineServiceImpl) GetCatalogName(name string, organizationId string) string {
-	if name != "" && organizationId != "" {
-		return strings.ToLower(fmt.Sprintf("%s_%s", name, organizationId))
-	}
-
-	return ""
 }

@@ -2,11 +2,11 @@ package services
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/poligonoio/vega-core/internal/models"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -23,17 +23,9 @@ func NewSchemaService(ctx context.Context, schemaCollection *mongo.Collection) S
 }
 
 func (self *SchemaServiceImpl) Create(schema models.Schema) error {
-	query := bson.D{bson.E{Key: "name", Value: schema.Name}, bson.E{Key: "organization_id", Value: schema.OrganizationId}, bson.E{Key: "data_source_name", Value: schema.DataSourceName}}
-	count, err := self.schemaCollection.CountDocuments(self.ctx, query)
-	if err != nil {
-		return err
-	}
+	schema.ID = primitive.NewObjectID()
 
-	if count > 0 {
-		return errors.New("Data source with that name already exists")
-	}
-
-	_, err = self.schemaCollection.InsertOne(self.ctx, schema)
+	_, err := self.schemaCollection.InsertOne(self.ctx, schema)
 	if err != nil {
 		return err
 	}
@@ -41,8 +33,8 @@ func (self *SchemaServiceImpl) Create(schema models.Schema) error {
 	return nil
 }
 
-func (self *SchemaServiceImpl) GetAll(dataSourceName string, organizationId string, schemas *[]models.Schema) error {
-	filter := bson.D{bson.E{Key: "data_source_name", Value: dataSourceName}, bson.E{Key: "organization_id", Value: organizationId}}
+func (self *SchemaServiceImpl) GetAll(dataSourceId primitive.ObjectID, schemas *[]models.Schema) error {
+	filter := bson.D{bson.E{Key: "data_source_id", Value: dataSourceId}}
 	cursor, err := self.schemaCollection.Find(self.ctx, filter)
 	if err != nil {
 		return err
@@ -55,31 +47,15 @@ func (self *SchemaServiceImpl) GetAll(dataSourceName string, organizationId stri
 	return nil
 }
 
-func (self *SchemaServiceImpl) UpdateDataSourceName(oldDataSourceName string, newDataSourceName string, organizationId string) error {
-	query := bson.D{bson.E{Key: "data_source_name", Value: oldDataSourceName}, bson.E{Key: "organization_id", Value: organizationId}}
-	update := bson.D{{Key: "$set", Value: bson.D{{Key: "data_source_name", Value: newDataSourceName}}}}
-
-	result, err := self.schemaCollection.UpdateOne(context.TODO(), query, update)
-	if err != nil {
-		return err
-	}
-
-	if result.MatchedCount < 1 {
-		return fmt.Errorf("No schema found with data source name  %s in the organization %s", oldDataSourceName, organizationId)
-	}
-
-	return nil
-}
-
-func (self *SchemaServiceImpl) Delete(dataSourceName string, organizationId string) error {
-	filter := bson.D{bson.E{Key: "data_source_name", Value: dataSourceName}, bson.E{Key: "organization_id", Value: organizationId}}
+func (self *SchemaServiceImpl) Delete(dataSourceId primitive.ObjectID) error {
+	filter := bson.D{bson.E{Key: "data_source_id", Value: dataSourceId}}
 	result, err := self.schemaCollection.DeleteOne(self.ctx, filter)
 	if err != nil {
 		return err
 	}
 
 	if result.DeletedCount < 1 {
-		return fmt.Errorf("No Schema found for Data Source %s in the organization %s", dataSourceName, organizationId)
+		return fmt.Errorf("No Schema found for Data Source ID: %s", dataSourceId.Hex())
 	}
 
 	return nil

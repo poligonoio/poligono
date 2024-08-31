@@ -48,7 +48,16 @@ func NewInfisicalService(ctx context.Context, projectId string, secretPath strin
 		return nil, err
 	}
 
-	if res.StatusCode != 200 {
+	if !(res.StatusCode >= 200 && res.StatusCode < 300) {
+		errRes := InfisicalErrorResponse{}
+
+		if err = json.NewDecoder(res.Body).Decode(&errRes); err != nil {
+			return nil, err
+		}
+
+		logger.Error.Printf("Infisical request status: %s\n", res.Status)
+		logger.Error.Println("Infisical request body: ")
+		logger.Error.Println(errRes)
 		return nil, fmt.Errorf("Couldn't connect to Infisical: %s", res.Status)
 	}
 
@@ -80,7 +89,16 @@ func (self *InfisicalServiceImpl) GetSecret(key string) (string, error) {
 		return "", err
 	}
 
-	if res.StatusCode != 200 {
+	if !(res.StatusCode >= 200 && res.StatusCode < 300) {
+		errRes := InfisicalErrorResponse{}
+
+		if err = json.NewDecoder(res.Body).Decode(&errRes); err != nil {
+			return "", err
+		}
+
+		logger.Error.Printf("Infisical request status: %s\n", res.Status)
+		logger.Error.Println("Infisical request body: ")
+		logger.Error.Println(errRes)
 		return "", fmt.Errorf("Couldn't connect to Infisical: %s", res.Status)
 	}
 
@@ -178,7 +196,16 @@ func (self *InfisicalServiceImpl) UpdateSecret(key string, secret string) error 
 		return err
 	}
 
-	if res.StatusCode != 200 {
+	if !(res.StatusCode >= 200 && res.StatusCode < 300) {
+		errRes := InfisicalErrorResponse{}
+
+		if err = json.NewDecoder(res.Body).Decode(&errRes); err != nil {
+			return err
+		}
+
+		logger.Error.Printf("Infisical request status: %s\n", res.Status)
+		logger.Error.Println("Infisical request body: ")
+		logger.Error.Println(errRes)
 		return fmt.Errorf("Couldn't connect to Infisical: %s", res.Status)
 	}
 
@@ -220,8 +247,17 @@ func (self *InfisicalServiceImpl) DeleteSecret(key string) error {
 		return err
 	}
 
-	if res.StatusCode != 200 {
-		return fmt.Errorf("Couldn't to connect to infisical: %s", res.Status)
+	if !(res.StatusCode >= 200 && res.StatusCode < 300) {
+		errRes := InfisicalErrorResponse{}
+
+		if err = json.NewDecoder(res.Body).Decode(&errRes); err != nil {
+			return err
+		}
+
+		logger.Error.Printf("Infisical request status: %s\n", res.Status)
+		logger.Error.Println("Infisical request body: ")
+		logger.Error.Println(errRes)
+		return fmt.Errorf("Couldn't connect to Infisical: %s", res.Status)
 	}
 
 	deleteSecretResponseBody := models.InfisicalDeleteSecretResponseBody{}
