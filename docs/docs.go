@@ -114,6 +114,41 @@ const docTemplate = `{
                 }
             }
         },
+        "/datasources/sync/{name}": {
+            "post": {
+                "description": "Synchronize data source schemas",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "data_source"
+                ],
+                "summary": "Sync Data Source",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.HTTPSuccess"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.HTTPError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.HTTPError"
+                        }
+                    }
+                }
+            }
+        },
         "/datasources/{name}": {
             "get": {
                 "description": "Retrieve data source configuration with the specified name",
@@ -191,7 +226,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.HTTPSuccess"
+                            "$ref": "#/definitions/models.DataSource"
                         }
                     },
                     "400": {
@@ -233,7 +268,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.HTTPSuccess"
+                            "$ref": "#/definitions/models.DataSource"
                         }
                     },
                     "400": {

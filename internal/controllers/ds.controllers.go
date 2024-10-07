@@ -210,6 +210,63 @@ func (self *DataSourceController) CreateDataSource(c *gin.Context) {
 // @BasePath /
 
 // PingExample godoc
+// @Summary Sync Data Source
+// @Schemes
+// @Description Synchronize data source schemas
+// @Tags data_source
+// @Accept json
+// @Produce json
+// @Success 200 {object} models.HTTPSuccess
+// @Failure 401 {object} models.HTTPError
+// @Failure 404 {object} models.HTTPError
+// @Router /datasources/sync/{name} [post]
+func (self *DataSourceController) SyncDataSource(c *gin.Context) {
+	name := c.Param("name")
+
+	_ownerId, _ := c.Get("owner_id")
+	ownerId, ok := _ownerId.(string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, models.HTTPError{
+			Error:       "internal_server_error",
+			Description: "Failed to read user identity",
+		})
+	}
+
+	_sub, _ := c.Get("sub")
+	sub, ok := _sub.(string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, models.HTTPError{
+			Error:       "internal_server_error",
+			Description: "Failed to read user identity",
+		})
+	}
+
+	dataSource, err := self.DataSourceService.GetByName(name, ownerId, false)
+	if err != nil {
+		logger.Error.Println(fmt.Printf("[%s][%s] Couldn't find data: %v\n", ownerId, sub, err))
+		c.JSON(http.StatusNotFound, models.HTTPError{
+			Error:       "not_found",
+			Description: "No data source found for your organization",
+		})
+		return
+	}
+
+	err = self.DataSourceService.Sync(dataSource.ID, dataSource.Type)
+	if err != nil {
+		logger.Error.Println(fmt.Printf("[%s][%s] Couldn't find data: %v\n", ownerId, sub, err))
+		c.JSON(http.StatusNotFound, models.HTTPError{
+			Error:       "not_found",
+			Description: "Error while syncing data source",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.HTTPSuccess{Message: "Data Source synced successfully"})
+}
+
+// @BasePath /
+
+// PingExample godoc
 // @Summary Modify Data Source
 // @Schemes
 // @Description Update the configuration of the specified data source
@@ -322,6 +379,7 @@ func (self *DataSourceController) RegisterDataSourceRoutes(rg *gin.RouterGroup) 
 	dataSourceRoute := rg.Group("datasources")
 	dataSourceRoute.GET("/:name", self.GetDataSourceByName)
 	dataSourceRoute.GET("/all", self.GetAllDataSource)
+	dataSourceRoute.POST("/sync/:name", self.SyncDataSource)
 	dataSourceRoute.POST("", self.CreateDataSource)
 	dataSourceRoute.PUT("/:name", self.UpdateDataSourceByName)
 	dataSourceRoute.DELETE("/:name", self.DeleteDataSourceByName)

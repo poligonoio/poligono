@@ -168,7 +168,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.HTTPSuccess'
+            $ref: '#/definitions/models.DataSource'
         "400":
           description: Bad Request
           schema:
@@ -234,7 +234,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.HTTPSuccess'
+            $ref: '#/definitions/models.DataSource'
         "400":
           description: Bad Request
           schema:
@@ -269,6 +269,29 @@ paths:
           schema:
             $ref: '#/definitions/models.HTTPError'
       summary: List Data Sources
+      tags:
+      - data_source
+  /datasources/sync/{name}:
+    post:
+      consumes:
+      - application/json
+      description: Synchronize data source schemas
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.HTTPSuccess'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.HTTPError'
+      summary: Sync Data Source
       tags:
       - data_source
   /prompts/generate:
