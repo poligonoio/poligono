@@ -40,19 +40,19 @@ type UpdateRequestDataSourceBody struct {
 }
 
 type PostgreSQLSecret struct {
-	Host     string `json:"hostname"`
-	Port     int    `json:"port"`
-	User     string `json:"username"`
-	Database string `json:"database"`
-	Password string `json:"password"`
-	SSL      bool   `json:"ssl"`
+	Host     string `json:"hostname" validate:"required,hostname"`
+	Port     int    `json:"port" validate:"required,number"`
+	User     string `json:"username" validate:"required"`
+	Database string `json:"database" validate:"required"`
+	Password string `json:"password" validate:"required"`
+	SSL      bool   `json:"ssl" validate:"required,boolean"`
 }
 
 type MySQLSecret struct {
-	Host     string `json:"hostname"`
-	Port     int    `json:"port"`
-	User     string `json:"username"`
-	Database string `json:"database"`
-	Password string `json:"password"`
-	SSL      bool   `json:"ssl"`
+	Host     string `json:"hostname" validate:"required,hostname"`
+	Port     int    `json:"port" validate:"required,number"`
+	User     string `json:"username" validate:"required"`
+	Database string `json:"database" validate:"required"`
+	Password string `json:"password" validate:"required"`
+	SSL      bool   `json:"ssl" validate:"required,boolean"`
 }

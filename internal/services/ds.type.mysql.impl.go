@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"strconv"
 
+	validatorv10 "github.com/go-playground/validator/v10"
 	"github.com/poligonoio/vega-core/internal/models"
+	"github.com/poligonoio/vega-core/pkg/logger"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -14,13 +16,15 @@ type MySQLDataSourceTypeImpl struct {
 	ctx           context.Context
 	engineService EngineService
 	schemaService SchemaService
+	validate      *validatorv10.Validate
 }
 
-func NewMySQLDataSourceDatabase(ctx context.Context, engineService EngineService, schemaService SchemaService) DataSourceTypeInter {
+func NewMySQLDataSourceDatabase(ctx context.Context, engineService EngineService, schemaService SchemaService, validate *validatorv10.Validate) DataSourceTypeInter {
 	return &MySQLDataSourceTypeImpl{
 		ctx:           ctx,
 		engineService: engineService,
 		schemaService: schemaService,
+		validate:      validate,
 	}
 }
 
@@ -81,6 +85,12 @@ func (self *MySQLDataSourceTypeImpl) CreateCatalog(catalogName string, dataSourc
 	mysql := models.MySQLSecret{}
 	if err := json.Unmarshal([]byte(secret), &mysql); err != nil {
 		return err
+	}
+
+	if err := self.validate.Struct(mysql); err != nil {
+		validationErr := err.(validatorv10.ValidationErrors)
+		logger.Error.Println(fmt.Printf("One or more secret fields are invalid: %s\n", validationErr))
+		return validationErr
 	}
 
 	var mysqlString string
