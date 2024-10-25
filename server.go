@@ -29,7 +29,6 @@ var server *http.Server
 var version string
 
 func init() {
-	// version := os.Getenv("POLIGONO_VERSION")
 	basePathStr := "/v1alpha1"
 
 	port := os.Getenv("PORT")
@@ -99,7 +98,7 @@ func init() {
 	// Initialize Data source service and controller
 	logger.Info.Println("Initializing Data source service and controller...")
 	dataSourceCollection := mongoClient.Database("poligono").Collection("datasources")
-	dataSourceService := services.NewDataSourceService(ctx, dataSourceCollection, infisicalService, trinoEngineService, schemaService)
+	dataSourceService := services.NewDataSourceService(ctx, dataSourceCollection, infisicalService, trinoEngineService, schemaService, validate)
 	dataSourceController := controllers.NewDataSourceController(dataSourceService, trinoEngineService, schemaService, validate)
 	logger.Info.Println("Data source service and controller Initialized successfully!")
 

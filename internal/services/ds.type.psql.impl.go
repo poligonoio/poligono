@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"strconv"
 
+	validatorv10 "github.com/go-playground/validator/v10"
 	"github.com/poligonoio/vega-core/internal/models"
+	"github.com/poligonoio/vega-core/pkg/logger"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -14,13 +16,15 @@ type PostgresSQLDataSourceTypeImpl struct {
 	ctx           context.Context
 	engineService EngineService
 	schemaService SchemaService
+	validate      *validatorv10.Validate
 }
 
-func NewPostgreSQLDataSourceDatabase(ctx context.Context, engineService EngineService, schemaService SchemaService) DataSourceTypeInter {
+func NewPostgreSQLDataSourceDatabase(ctx context.Context, engineService EngineService, schemaService SchemaService, validate *validatorv10.Validate) DataSourceTypeInter {
 	return &PostgresSQLDataSourceTypeImpl{
 		ctx:           ctx,
 		engineService: engineService,
 		schemaService: schemaService,
+		validate:      validate,
 	}
 }
 
@@ -82,6 +86,12 @@ func (self *PostgresSQLDataSourceTypeImpl) CreateCatalog(catalogName string, dat
 	psql := models.PostgreSQLSecret{}
 	if err := json.Unmarshal([]byte(secret), &psql); err != nil {
 		return err
+	}
+
+	if err := self.validate.Struct(psql); err != nil {
+		validationErr := err.(validatorv10.ValidationErrors)
+		logger.Error.Println(fmt.Printf("One or more secret fields are invalid: %s\n", validationErr))
+		return validationErr
 	}
 
 	var psqlString string

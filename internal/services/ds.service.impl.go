@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"reflect"
 
+	validatorv10 "github.com/go-playground/validator/v10"
 	"github.com/poligonoio/vega-core/internal/models"
 	"github.com/poligonoio/vega-core/pkg/logger"
 	"github.com/poligonoio/vega-core/pkg/utils"
@@ -20,15 +21,17 @@ type DataSourceServiceImpl struct {
 	infisicalService     InfisicalService
 	engineService        EngineService
 	schemaService        SchemaService
+	validate             *validatorv10.Validate
 }
 
-func NewDataSourceService(ctx context.Context, dataSourceCollection *mongo.Collection, infisicalService InfisicalService, engineService EngineService, schemaService SchemaService) DataSourceService {
+func NewDataSourceService(ctx context.Context, dataSourceCollection *mongo.Collection, infisicalService InfisicalService, engineService EngineService, schemaService SchemaService, validate *validatorv10.Validate) DataSourceService {
 	return &DataSourceServiceImpl{
 		ctx:                  ctx,
 		dataSourceCollection: dataSourceCollection,
 		infisicalService:     infisicalService,
 		engineService:        engineService,
 		schemaService:        schemaService,
+		validate:             validate,
 	}
 }
 
@@ -259,13 +262,13 @@ func (self *DataSourceServiceImpl) CreateCatalog(catalogName string, dataSourceT
 
 	switch dataSourceType {
 	case models.PostgreSQL:
-		psql := NewPostgreSQLDataSourceDatabase(self.ctx, self.engineService, self.schemaService)
+		psql := NewPostgreSQLDataSourceDatabase(self.ctx, self.engineService, self.schemaService, self.validate)
 		err = psql.CreateCatalog(catalogName, dataSourceType, secret)
 	case models.MySQL:
-		mysql := NewMySQLDataSourceDatabase(self.ctx, self.engineService, self.schemaService)
+		mysql := NewMySQLDataSourceDatabase(self.ctx, self.engineService, self.schemaService, self.validate)
 		err = mysql.CreateCatalog(catalogName, dataSourceType, secret)
 	case models.MariaDB:
-		mariadb := NewMariaDBDataSourceDatabase(self.ctx, self.engineService, self.schemaService)
+		mariadb := NewMariaDBDataSourceDatabase(self.ctx, self.engineService, self.schemaService, self.validate)
 		err = mariadb.CreateCatalog(catalogName, dataSourceType, secret)
 	default:
 		return errors.New("Invalid Data Source Type")
@@ -283,13 +286,13 @@ func (self *DataSourceServiceImpl) Sync(id primitive.ObjectID, dataSourceType mo
 
 	switch dataSourceType {
 	case models.PostgreSQL:
-		psql := NewPostgreSQLDataSourceDatabase(self.ctx, self.engineService, self.schemaService)
+		psql := NewPostgreSQLDataSourceDatabase(self.ctx, self.engineService, self.schemaService, self.validate)
 		err = psql.Sync(id)
 	case models.MySQL:
-		mysql := NewMySQLDataSourceDatabase(self.ctx, self.engineService, self.schemaService)
+		mysql := NewMySQLDataSourceDatabase(self.ctx, self.engineService, self.schemaService, self.validate)
 		err = mysql.Sync(id)
 	case models.MariaDB:
-		mariadb := NewMariaDBDataSourceDatabase(self.ctx, self.engineService, self.schemaService)
+		mariadb := NewMariaDBDataSourceDatabase(self.ctx, self.engineService, self.schemaService, self.validate)
 		err = mariadb.Sync(id)
 	default:
 		return errors.New("Invalid Data Source Type")
