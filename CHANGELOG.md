@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/poligonoio/poligono/compare/v0.2.1...v0.2.2) (2024-10-25)
+
+
+### Bug Fixes
+
+* Add validation for data source secrets ([157fd8b](https://github.com/poligonoio/poligono/commit/157fd8b20931e4d9b563d02629a1d466b7fe9adc))
+
 ## [0.2.1](https://github.com/poligonoio/poligono/compare/v0.2.0...v0.2.1) (2024-10-07)
 
 
