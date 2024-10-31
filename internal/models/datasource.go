@@ -45,7 +45,7 @@ type PostgreSQLSecret struct {
 	User     string `json:"username" validate:"required"`
 	Database string `json:"database" validate:"required"`
 	Password string `json:"password" validate:"required"`
-	SSL      bool   `json:"ssl" validate:"required,boolean"`
+	SSL      bool   `json:"ssl" validate:"boolean"`
 }
 
 type MySQLSecret struct {
@@ -54,5 +54,5 @@ type MySQLSecret struct {
 	User     string `json:"username" validate:"required"`
 	Database string `json:"database" validate:"required"`
 	Password string `json:"password" validate:"required"`
-	SSL      bool   `json:"ssl" validate:"required,boolean"`
+	SSL      bool   `json:"ssl" validate:"boolean"`
 }
