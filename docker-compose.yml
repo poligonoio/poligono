@@ -23,23 +23,36 @@ services:
       - .env
 
   sync:
-    image: ghcr.io/poligonoio/poligono-data-source-sync:main
+    platform: linux/arm64
+    image: ghcr.io/poligonoio/poligono-data-source-sync:latest
+    pull_policy: always
     restart: unless-stopped
     depends_on:
-      - broker
-      - schema-registry
-      - connect
-      - control-center
-      - ksqldb-server
-      - ksqldb-cli
-      - ksql-datagen
-      - rest-proxy
-      - mongo
-      - trino
-      - poligono-core
+      broker:
+        condition: service_healthy
+        restart: true
+      schema-registry:
+        condition: service_started
+      connect:
+        condition: service_started
+      control-center:
+        condition: service_started
+      ksqldb-server:
+        condition: service_started
+      ksqldb-cli:
+        condition: service_started
+      ksql-datagen:
+        condition: service_started
+      rest-proxy:
+        condition: service_started
+      mongo:
+        condition: service_started
+      trino:
+        condition: service_started
+      poligono-core:
+        condition: service_started
     env_file:
       - .env.sync
-
 
   mongo:
     image: mongo
@@ -79,6 +92,11 @@ services:
       image: confluentinc/cp-kafka:7.7.1
       hostname: broker
       container_name: broker
+      healthcheck:
+        test: kafka-topics --bootstrap-server broker:9092 --list
+        interval: 30s
+        timeout: 10s
+        retries: 3
       ports:
         - "9092:9092"
         - "9101:9101"
@@ -117,9 +135,7 @@ services:
 
   connect:
     image: ghcr.io/poligonoio/poligono-kafka-connect:v0.1.2
-    # build:
-    #   context: .
-    #   dockerfile: Dockerfile.connect
+    pull_policy: always
     hostname: connect
     container_name: connect
     depends_on:
