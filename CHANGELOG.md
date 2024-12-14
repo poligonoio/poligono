@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.2.2](https://github.com/poligonoio/poligono/compare/v0.2.1...v0.2.2) (2024-12-14)
+
+
+### Bug Fixes
+
+* Add ARM support ([2299e3b](https://github.com/poligonoio/poligono/commit/2299e3b63b10092e8550d98deab27384f8b5e9c9))
+* add docker buildx ([00bb11c](https://github.com/poligonoio/poligono/commit/00bb11c044a47c9cf5a00d83126106126253a364))
+* Add validation for data source secrets ([157fd8b](https://github.com/poligonoio/poligono/commit/157fd8b20931e4d9b563d02629a1d466b7fe9adc))
+* golang build ([b4b54c8](https://github.com/poligonoio/poligono/commit/b4b54c8134baef40019ae20e9b8e59c83e9373a9))
+* remove docker-compose ([55d5f9a](https://github.com/poligonoio/poligono/commit/55d5f9ae9f74382d219b14fd1cadad86e3a386bc))
+* updates ([d3e6765](https://github.com/poligonoio/poligono/commit/d3e6765235677fdbc0d4124ed5396888e0b0fbe0))
+* updates ([d42ae89](https://github.com/poligonoio/poligono/commit/d42ae892011b7e119d198ef6f8972eecd0e8d0e9))
+
 ## [0.2.1](https://github.com/poligonoio/poligono/compare/v0.2.0...v0.2.1) (2024-10-07)
 
 
