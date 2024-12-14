@@ -13,7 +13,7 @@ COPY . .
 
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags "-X main.version=${POLIGONO_VERSION}" -o ./bin/vega-core ./server.go
 
-FROM busybox:1.35.0-uclibc as busybox
+FROM busybox:1.35.0-uclibc AS busybox
 
 FROM gcr.io/distroless/base-debian11 AS build-release-stage
 
